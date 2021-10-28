@@ -1,0 +1,15 @@
+includes:
+ - tests/conditional.config.php
+parameters:
+    paths:
+        - src
+    level: 8
+    inferPrivatePropertyTypeFromConstructor: true
+    checkMissingIterableValueType: false
+    bootstrapFiles:
+        - openssl_constants.php
+    reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        - '#Function openssl_cms_sign not found.#'
+        - '#Function openssl_cms_verify not found.#'
+
