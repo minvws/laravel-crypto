@@ -77,7 +77,8 @@ class NativeService implements SignatureCryptoInterface
                 array($this->privKeyPath, $this->privKeyPass),
                 $headers,
                 $flags,
-                OPENSSL_ENCODING_DER
+                OPENSSL_ENCODING_DER,
+                $this->certChainPath
             );
 
             // Grab signature contents
