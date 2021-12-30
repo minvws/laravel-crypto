@@ -5,6 +5,7 @@ namespace MinVWS\Crypto\Laravel\Service\Signature;
 use MinVWS\Crypto\Laravel\CryptoException;
 use MinVWS\Crypto\Laravel\SignatureCryptoInterface;
 use Symfony\Component\Process\Process;
+use Illuminate\Support\Facades\Log;
 
 class ProcessSpawnService implements SignatureCryptoInterface
 {
@@ -63,8 +64,7 @@ class ProcessSpawnService implements SignatureCryptoInterface
 
         $errOutput = $process->getErrorOutput();
         if ($errOutput != "") {
-            print $errOutput;
-//            Log::error($errOutput);
+            Log::error($errOutput);
         }
 
         return base64_encode($process->getOutput());
