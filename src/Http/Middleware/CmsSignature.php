@@ -36,12 +36,12 @@ class CmsSignature
      * @param Closure $next
      * @return mixed
      */
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next, bool $detached = false)
     {
         $response = $next($request);
 
         $data = trim($response->getContent());
-        $signature = $this->signatureService->sign($data);
+        $signature = $this->signatureService->sign($data, $detached);
 
         if ($this->format == self::FORMAT_INLINE) {
             if ($response instanceof JsonResponse) {
