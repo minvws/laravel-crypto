@@ -108,7 +108,6 @@ class ProcessSpawnService implements SignatureCryptoInterface
                 && !str_starts_with($errOutput, "Verification successful")
                 && !str_starts_with($errOutput, "Verification failure")
             ) {
-                var_dump($errOutput);
                 throw CryptoException::verify($errOutput);
             }
 
