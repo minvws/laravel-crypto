@@ -9,7 +9,6 @@ use PHPUnit\Framework\TestCase;
 
 class ServiceTest extends TestCase
 {
-
     public function serviceTypeProvider(): array
     {
         if (PHP_VERSION_ID >= 80000) {
@@ -70,7 +69,7 @@ class ServiceTest extends TestCase
             './tests/mockdata/cert-001.cert',
             './tests/mockdata/cert-001.key',
             '',
-            './tests/mockdata/cert-001.cert',
+            './tests/mockdata/cert-001.chain',
         ];
 
         if ($serviceType == 'native') {

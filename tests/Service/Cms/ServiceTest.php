@@ -10,7 +10,6 @@ use PHPUnit\Framework\TestCase;
 
 class ServiceTest extends TestCase
 {
-
     public function serviceTypeProvider(): array
     {
         if (PHP_VERSION_ID >= 80000) {
