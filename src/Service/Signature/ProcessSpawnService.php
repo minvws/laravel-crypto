@@ -85,6 +85,7 @@ class ProcessSpawnService implements SignatureCryptoInterface
                 $args = array_merge($args, ['-CAfile', $this->certChainPath]);
             }
 
+
             if ($content !== null) {
                 // @TODO: generate tmp file with data
                 $tmpFile = tmpfile();
@@ -102,8 +103,7 @@ class ProcessSpawnService implements SignatureCryptoInterface
 
             $errOutput = $process->getErrorOutput();
             if ($errOutput != "") {
-//                print $errOutput;
-                //            Log::error($errOutput);
+                Log::error($errOutput);
             }
 
             return $process->getExitCode() == 0;

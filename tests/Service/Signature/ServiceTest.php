@@ -70,7 +70,7 @@ class ServiceTest extends TestCase
             './tests/mockdata/cert-001.cert',
             './tests/mockdata/cert-001.key',
             '',
-            './tests/mockdata/cert-001.cert',
+            './tests/mockdata/cert-001.chain',
         ];
 
         if ($serviceType == 'native') {
