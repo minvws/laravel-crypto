@@ -36,10 +36,6 @@ class NativeService implements CmsCryptoInterface
         $this->encryptionCertsPath = $paths;
         $this->decryptionCertPath = "file://" . $decryptionCertPath;
         $this->decryptionCertKeyPath = "file://" . $decryptionCertKeyPath;
-
-        if (!is_readable($decryptionCertKeyPath)) {
-            throw CryptoException::cannotReadFile($decryptionCertKeyPath);
-        }
     }
 
     public function encrypt(string $plainText): string
@@ -92,6 +88,10 @@ class NativeService implements CmsCryptoInterface
     public function decrypt(string $cipherText): string
     {
         $outFile = $inFile = null;
+
+        if (!is_readable($this->decryptionCertKeyPath)) {
+            throw CryptoException::cannotReadFile($this->decryptionCertKeyPath);
+        }
 
         try {
             $inFile = tmpfile();

@@ -52,17 +52,6 @@ class ServiceTest extends TestCase
         $this->assertFalse($serviceOther->verify($signedData));
     }
 
-    /**
-     * @dataProvider serviceTypeProvider
-     */
-    public function testAllPurpose(string $serviceType, string $serviceTypeOther): void
-    {
-        $data = json_decode(file_get_contents(__DIR__ . "/../../mockdata/mock-signature.json"), true);
-
-        $service = $this->getService($serviceType);
-        $this->assertTrue($service->verify($data['signature'], base64_decode($data['payload'])));
-    }
-
     private function getService(string $serviceType): SignatureCryptoInterface
     {
         $args = [

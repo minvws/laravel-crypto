@@ -32,10 +32,6 @@ class ProcessSpawnService implements CmsCryptoInterface
         $this->encryptionCertsPath = $encryptionCertsPath;
         $this->decryptionCertPath = $decryptionCertPath;
         $this->decryptionCertKeyPath = $decryptionCertKeyPath;
-
-        if (!is_readable($decryptionCertKeyPath)) {
-            throw CryptoException::cannotReadFile($decryptionCertKeyPath);
-        }
     }
 
 
@@ -67,6 +63,10 @@ class ProcessSpawnService implements CmsCryptoInterface
      */
     public function decrypt(string $cipherText): string
     {
+        if (!is_readable($this->decryptionCertKeyPath)) {
+            throw CryptoException::cannotReadFile($this->decryptionCertKeyPath);
+        }
+
         $args = [
             'openssl', 'cms', '-decrypt', '-inform', 'PEM', '-inkey',
             $this->decryptionCertKeyPath, $this->decryptionCertPath
