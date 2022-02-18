@@ -72,18 +72,19 @@ class ProcessSpawnService implements SignatureCryptoInterface
     /**
      * @param string $signedPayload
      * @param string|null $content
+     * @param string|null $certificate
      * @return bool
      */
-    public function verify(string $signedPayload, string $content = null): bool
+    public function verify(string $signedPayload, string $content = null, string $certificate = null): bool
     {
         $tmpFile = null;
+        $certTmpFile = null;
 
         try {
             $args = ['openssl', 'cms', '-verify', '-inform', 'DER', '-noout', '-purpose', 'any'];
             if ($this->certChainPath != "") {
                 $args = array_merge($args, ['-CAfile', $this->certChainPath]);
             }
-
 
             if ($content !== null) {
                 // @TODO: generate tmp file with data
@@ -94,6 +95,17 @@ class ProcessSpawnService implements SignatureCryptoInterface
                 $tmpFilePath = stream_get_meta_data($tmpFile)['uri'];
                 file_put_contents($tmpFilePath, $content);
                 $args = array_merge($args, ['-content', $tmpFilePath]);
+            }
+
+            if ($certificate !== null) {
+                // @TODO: generate tmp file with data
+                $certTmpFile = tmpfile();
+                if (!is_resource($certTmpFile)) {
+                    throw CryptoException::verify("cannot create temp file on disk");
+                }
+                $certTmpFilePath = stream_get_meta_data($certTmpFile)['uri'];
+                file_put_contents($certTmpFilePath, $certificate);
+                $args = array_merge($args, ['-certfile', $certTmpFilePath, '-nointern']);
             }
 
             $process = new Process($args);
@@ -115,6 +127,9 @@ class ProcessSpawnService implements SignatureCryptoInterface
         } finally {
             if ($tmpFile) {
                 fclose($tmpFile);
+            }
+            if ($certTmpFile) {
+                fclose($certTmpFile);
             }
         }
     }
