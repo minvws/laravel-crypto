@@ -36,8 +36,12 @@ class ServiceTest extends TestCase
 
         $signedData = $service->sign('foobar');
         $this->assertTrue($serviceOther->verify($signedData));
-        $this->assertTrue($serviceOther->verify($signedData, null, file_get_contents('./tests/mockdata/cert-001.cert')));
-        $this->assertFalse($serviceOther->verify($signedData, null, file_get_contents('./tests/mockdata/cert-002.cert')));
+        $this->assertTrue(
+            $serviceOther->verify($signedData, null, file_get_contents('./tests/mockdata/cert-001.cert'))
+        );
+        $this->assertFalse(
+            $serviceOther->verify($signedData, null, file_get_contents('./tests/mockdata/cert-002.cert'))
+        );
     }
 
     /**
@@ -53,8 +57,12 @@ class ServiceTest extends TestCase
         $this->assertFalse($serviceOther->verify($signedData, 'not-foobar'));
         $this->assertFalse($serviceOther->verify($signedData));
 
-        $this->assertTrue($serviceOther->verify($signedData, 'foobar', file_get_contents('./tests/mockdata/cert-001.cert')));
-        $this->assertFalse($serviceOther->verify($signedData, 'foobar', file_get_contents('./tests/mockdata/cert-002.cert')));
+        $this->assertTrue(
+            $serviceOther->verify($signedData, 'foobar', file_get_contents('./tests/mockdata/cert-001.cert'))
+        );
+        $this->assertFalse(
+            $serviceOther->verify($signedData, 'foobar', file_get_contents('./tests/mockdata/cert-002.cert'))
+        );
     }
 
     private function getService(string $serviceType): SignatureCryptoInterface
