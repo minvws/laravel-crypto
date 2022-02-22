@@ -87,7 +87,6 @@ class ProcessSpawnService implements SignatureCryptoInterface
             }
 
             if ($content !== null) {
-                // @TODO: generate tmp file with data
                 $tmpFile = tmpfile();
                 if (!is_resource($tmpFile)) {
                     throw CryptoException::verify("cannot create temp file on disk");
@@ -98,7 +97,6 @@ class ProcessSpawnService implements SignatureCryptoInterface
             }
 
             if ($certificate !== null) {
-                // @TODO: generate tmp file with data
                 $certTmpFile = tmpfile();
                 if (!is_resource($certTmpFile)) {
                     throw CryptoException::verify("cannot create temp file on disk");
