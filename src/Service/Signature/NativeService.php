@@ -102,18 +102,22 @@ class NativeService implements SignatureCryptoInterface
     /**
      * @param string $signedPayload
      * @param string|null $content
+     * @param string|null $certificate
      * @return bool
      */
-    public function verify(string $signedPayload, string $content = null): bool
+    public function verify(string $signedPayload, string $content = null, string $certificate = null): bool
     {
         $tmpFileContentData = null;
         $tmpFileContentDataPath = null;
         $tmpFileSignedData = null;
         $tmpFileSignedDataPath = null;
+        $tmpFileCertificateData = null;
+        $tmpFileCertificateDataPath = null;
 
         try {
             $detached = !is_null($content);
 
+            /** @var resource $tmpFileSignedData */
             $tmpFileSignedData = tmpfile();
             if (!is_resource($tmpFileSignedData)) {
                 throw CryptoException::verify("cannot create temp file on disk");
@@ -125,13 +129,25 @@ class NativeService implements SignatureCryptoInterface
             if ($detached) {
                 $flags |= OPENSSL_CMS_DETACHED;
 
-                /** @var resource $tmpFileSignedData */
+                /** @var resource $tmpFileContentData */
                 $tmpFileContentData = tmpfile();
                 if (!is_resource($tmpFileContentData)) {
                     throw CryptoException::verify("cannot create temp file on disk");
                 }
                 $tmpFileContentDataPath = stream_get_meta_data($tmpFileContentData)['uri'];
                 file_put_contents($tmpFileContentDataPath, $content);
+            }
+
+            if ($certificate) {
+                $flags |= OPENSSL_CMS_NOINTERN;
+
+                /** @var resource $tmpFileCertificateData */
+                $tmpFileCertificateData = tmpfile();
+                if (!is_resource($tmpFileCertificateData)) {
+                    throw CryptoException::verify("cannot create temp file on disk");
+                }
+                $tmpFileCertificateDataPath = stream_get_meta_data($tmpFileCertificateData)['uri'];
+                file_put_contents($tmpFileCertificateDataPath, $certificate);
             }
 
             /*
@@ -145,7 +161,7 @@ class NativeService implements SignatureCryptoInterface
                 $flags,
                 null,
                 array(),
-                null,
+                $tmpFileCertificateDataPath,
                 null,
                 null,
                 $detached ? $tmpFileSignedDataPath : $tmpFileContentDataPath,
@@ -160,6 +176,9 @@ class NativeService implements SignatureCryptoInterface
             }
             if (is_resource($tmpFileContentData)) {
                 fclose($tmpFileContentData);
+            }
+            if (is_resource($tmpFileCertificateData)) {
+                fclose($tmpFileCertificateData);
             }
         }
     }
