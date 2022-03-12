@@ -15,7 +15,7 @@ jobs:
             matrix:
                 php: [ 7.3, 7.4, 8.1 8.0 ]
                 laravel: [ 7.*, 8.*, 9.* ]
-                stability: [ prefer-lowest, prefer-stable ]
+                stability: [ prefer-stable ]
                 include:
                     - laravel: 7.*
                       testbench: ^5.20
