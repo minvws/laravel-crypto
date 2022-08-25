@@ -2,40 +2,36 @@
 
 namespace MinVWS\Crypto\Laravel\Service\Signature;
 
-use Illuminate\Support\Facades\Log;
 use MinVWS\Crypto\Laravel\CryptoException;
 use MinVWS\Crypto\Laravel\SignatureCryptoInterface;
-use Symfony\Component\Process\Process;
+use MinVWS\Crypto\Laravel\SignatureSignCryptoInterface;
+use MinVWS\Crypto\Laravel\SignatureVerifyCryptoInterface;
 
-class NativeService implements SignatureCryptoInterface
+class NativeService implements SignatureCryptoInterface, SignatureSignCryptoInterface, SignatureVerifyCryptoInterface
 {
-    /** @var string */
+    /** @var ?string */
     protected $certPath;
-    /** @var string */
+    /** @var ?string */
     protected $privKeyPath;
-    /** @var string */
+    /** @var ?string */
     protected $privKeyPass;
-    /** @var string */
+    /** @var ?string */
     protected $certChainPath;
 
     /**
      * NativeService constructor.
      *
-     * @param string $certPath
-     * @param string $privKeyPath
-     * @param string $privKeyPass
-     * @param string $certChainPath
+     * @param string|null $certPath
+     * @param string|null $privKeyPath
+     * @param string|null $privKeyPass
+     * @param string|null $certChainPath
      */
-    public function __construct(string $certPath, string $privKeyPath, string $privKeyPass, string $certChainPath)
+    public function __construct(?string $certPath = null, ?string $privKeyPath = null, ?string $privKeyPass = null, ?string $certChainPath = null)
     {
-        $this->certPath = "file://" . $certPath;
-        $this->privKeyPath = "file://" . $privKeyPath;
+        $this->certPath = $certPath;
+        $this->privKeyPath = $privKeyPath;
         $this->privKeyPass = $privKeyPass;
         $this->certChainPath = $certChainPath;
-
-        if (!is_readable($privKeyPath)) {
-            throw CryptoException::cannotReadFile($privKeyPath);
-        }
     }
 
     /**
@@ -45,6 +41,10 @@ class NativeService implements SignatureCryptoInterface
      */
     public function sign(string $payload, bool $detached = false): string
     {
+        if (!is_readable($this->privKeyPath)) {
+            throw CryptoException::cannotReadFile($this->privKeyPath);
+        }
+
         $tmpFileSignature = null;
         $tmpFileData = null;
 

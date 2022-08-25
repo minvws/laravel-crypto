@@ -4,37 +4,35 @@ namespace MinVWS\Crypto\Laravel\Service\Signature;
 
 use MinVWS\Crypto\Laravel\CryptoException;
 use MinVWS\Crypto\Laravel\SignatureCryptoInterface;
+use MinVWS\Crypto\Laravel\SignatureSignCryptoInterface;
+use MinVWS\Crypto\Laravel\SignatureVerifyCryptoInterface;
 use Symfony\Component\Process\Process;
 
-class ProcessSpawnService implements SignatureCryptoInterface
+class ProcessSpawnService implements SignatureCryptoInterface, SignatureSignCryptoInterface, SignatureVerifyCryptoInterface
 {
-    /** @var string */
+    /** @var ?string */
     protected $certPath;
-    /** @var string */
+    /** @var ?string */
     protected $privKeyPath;
-    /** @var string */
+    /** @var ?string */
     protected $privKeyPass;
-    /** @var string */
+    /** @var ?string */
     protected $certChainPath;
 
     /**
      * ProcessSpawnService constructor.
      *
-     * @param string $certPath
-     * @param string $privKeyPath
-     * @param string $privKeyPass
-     * @param string $certChainPath
+     * @param string|null $certPath
+     * @param string|null $privKeyPath
+     * @param string|null $privKeyPass
+     * @param string|null $certChainPath
      */
-    public function __construct(string $certPath, string $privKeyPath, string $privKeyPass, string $certChainPath)
+    public function __construct(?string $certPath = null, ?string $privKeyPath = null, ?string $privKeyPass = null, ?string $certChainPath = null)
     {
         $this->certPath = $certPath;
         $this->privKeyPath = $privKeyPath;
         $this->privKeyPass = $privKeyPass;
         $this->certChainPath = $certChainPath;
-
-        if (!is_readable($privKeyPath)) {
-            throw CryptoException::cannotReadFile($privKeyPass);
-        }
     }
 
     /**
@@ -44,16 +42,20 @@ class ProcessSpawnService implements SignatureCryptoInterface
      */
     public function sign(string $payload, bool $detached = false): string
     {
+        if (!is_readable($this->privKeyPass)) {
+            throw CryptoException::cannotReadFile($this->privKeyPass);
+        }
+
         $args = [
             'openssl', 'cms', '-sign', '-signer', $this->certPath, '-inkey', $this->privKeyPath, '-outform', 'DER'
         ];
         if (!$detached) {
             $args = array_merge($args, ['-nodetach']);
         }
-        if ($this->privKeyPass != "") {
+        if (!empty($this->privKeyPass)) {
             $args = array_merge($args, ['-passin', $this->privKeyPass]);
         }
-        if ($this->certChainPath != "") {
+        if (!empty($this->certChainPath)) {
             $args = array_merge($args, ['-CAfile', $this->certChainPath]);
         }
 
