@@ -79,9 +79,10 @@ class ProcessSpawnService implements SignatureCryptoInterface, SignatureSignCryp
      * @param string $signedPayload
      * @param string|null $content
      * @param string|null $certificate
+     * @param SignatureVerifyConfig|null $verifyConfig
      * @return bool
      */
-    public function verify(string $signedPayload, string $content = null, string $certificate = null): bool
+    public function verify(string $signedPayload, string $content = null, string $certificate = null, ?SignatureVerifyConfig $verifyConfig = null): bool
     {
         $tmpFile = null;
         $certTmpFile = null;

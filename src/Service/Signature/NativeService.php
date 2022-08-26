@@ -97,9 +97,10 @@ class NativeService implements SignatureCryptoInterface, SignatureSignCryptoInte
      * @param string $signedPayload
      * @param string|null $content
      * @param string|null $certificate
+     * @param SignatureVerifyConfig|null $verifyConfig
      * @return bool
      */
-    public function verify(string $signedPayload, string $content = null, string $certificate = null): bool
+    public function verify(string $signedPayload, string $content = null, string $certificate = null, ?SignatureVerifyConfig $verifyConfig = null): bool
     {
         $tmpFileContentData = null;
         $tmpFileContentDataPath = null;
