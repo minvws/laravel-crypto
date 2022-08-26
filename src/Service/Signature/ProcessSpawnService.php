@@ -2,14 +2,18 @@
 
 namespace MinVWS\Crypto\Laravel\Service\Signature;
 
-use MinVWS\Crypto\Laravel\CryptoException;
+use MinVWS\Crypto\Laravel\Exceptions\CryptoException;
+use MinVWS\Crypto\Laravel\Exceptions\FileException;
 use MinVWS\Crypto\Laravel\SignatureCryptoInterface;
 use MinVWS\Crypto\Laravel\SignatureSignCryptoInterface;
 use MinVWS\Crypto\Laravel\SignatureVerifyCryptoInterface;
+use MinVWS\Crypto\Laravel\Traits\TempFiles;
 use Symfony\Component\Process\Process;
 
 class ProcessSpawnService implements SignatureCryptoInterface, SignatureSignCryptoInterface, SignatureVerifyCryptoInterface
 {
+    use TempFiles;
+
     /** @var ?string */
     protected $certPath;
     /** @var ?string */
@@ -42,8 +46,8 @@ class ProcessSpawnService implements SignatureCryptoInterface, SignatureSignCryp
      */
     public function sign(string $payload, bool $detached = false): string
     {
-        if (!is_readable($this->privKeyPass)) {
-            throw CryptoException::cannotReadFile($this->privKeyPass);
+        if (!is_readable($this->privKeyPath)) {
+            throw FileException::cannotReadFile($this->privKeyPath);
         }
 
         $args = [
@@ -64,7 +68,7 @@ class ProcessSpawnService implements SignatureCryptoInterface, SignatureSignCryp
         $process->run();
 
         $errOutput = $process->getErrorOutput();
-        if ($errOutput != "") {
+        if (!empty($errOutput)) {
             throw CryptoException::sign($errOutput);
         }
 
@@ -84,28 +88,18 @@ class ProcessSpawnService implements SignatureCryptoInterface, SignatureSignCryp
 
         try {
             $args = ['openssl', 'cms', '-verify', '-inform', 'DER', '-noout', '-purpose', 'any'];
-            if ($this->certChainPath != "") {
+            if (!empty($this->certChainPath)) {
                 $args = array_merge($args, ['-CAfile', $this->certChainPath]);
             }
 
             if ($content !== null) {
-                $tmpFile = tmpfile();
-                if (!is_resource($tmpFile)) {
-                    throw CryptoException::verify("cannot create temp file on disk");
-                }
-                $tmpFilePath = stream_get_meta_data($tmpFile)['uri'];
-                file_put_contents($tmpFilePath, $content);
-                $args = array_merge($args, ['-content', $tmpFilePath]);
+                $tmpFile = $this->createTempFileWithContent($content);
+                $args = array_merge($args, ['-content', $this->getTempFilePath($tmpFile)]);
             }
 
             if ($certificate !== null) {
-                $certTmpFile = tmpfile();
-                if (!is_resource($certTmpFile)) {
-                    throw CryptoException::verify("cannot create temp file on disk");
-                }
-                $certTmpFilePath = stream_get_meta_data($certTmpFile)['uri'];
-                file_put_contents($certTmpFilePath, $certificate);
-                $args = array_merge($args, ['-certfile', $certTmpFilePath, '-nointern']);
+                $certTmpFile = $this->createTempFileWithContent($certificate);
+                $args = array_merge($args, ['-certfile', $this->getTempFilePath($certTmpFile), '-nointern']);
             }
 
             $process = new Process($args);
@@ -116,21 +110,17 @@ class ProcessSpawnService implements SignatureCryptoInterface, SignatureSignCryp
 
             // Successful and failure are expected.
             if (
-                $errOutput != ""
+                !empty($errOutput)
                 && !str_starts_with($errOutput, "Verification successful")
                 && !str_starts_with($errOutput, "Verification failure")
             ) {
                 throw CryptoException::verify($errOutput);
             }
 
-            return $process->getExitCode() == 0;
+            return $process->getExitCode() === 0;
         } finally {
-            if ($tmpFile) {
-                fclose($tmpFile);
-            }
-            if ($certTmpFile) {
-                fclose($certTmpFile);
-            }
+            $this->closeTempFile($tmpFile);
+            $this->closeTempFile($certTmpFile);
         }
     }
 }

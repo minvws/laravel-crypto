@@ -3,10 +3,13 @@
 namespace MinVWS\Crypto\Laravel\Service\Cms;
 
 use MinVWS\Crypto\Laravel\CmsCryptoInterface;
-use MinVWS\Crypto\Laravel\CryptoException;
+use MinVWS\Crypto\Laravel\Exceptions\CryptoException;
+use MinVWS\Crypto\Laravel\Traits\TempFiles;
 
 class NativeService implements CmsCryptoInterface
 {
+    use TempFiles;
+
     /**
      * @var string[] The certificate paths that are used to encrypt the data. The privkey of any of these certs can
      * decrypt the data. Useful when you want to decrypt the same data at multiple places. */
@@ -43,18 +46,11 @@ class NativeService implements CmsCryptoInterface
         $outFile = $inFile = null;
 
         try {
-            $inFile = tmpfile();
-            if (!is_resource($inFile)) {
-                throw CryptoException::encryptCannotCreateTempFile();
-            }
-            $inFilePath = stream_get_meta_data($inFile)['uri'];
-            file_put_contents($inFilePath, $plainText);
+            $inFile = $this->createTempFileWithContent($plainText);
+            $inFilePath = $this->getTempFilePath($inFile);
 
-            $outFile = tmpfile();
-            if (!is_resource($outFile)) {
-                throw CryptoException::encryptCannotCreateTempFile();
-            }
-            $outFilePath = stream_get_meta_data($outFile)['uri'];
+            $outFile = $this->createTempFile();
+            $outFilePath = $this->getTempFilePath($outFile);
 
             $headers = array();
 
@@ -76,12 +72,8 @@ class NativeService implements CmsCryptoInterface
 
             return $cipherText;
         } finally {
-            if (is_resource($inFile)) {
-                fclose($inFile);
-            }
-            if (is_resource($outFile)) {
-                fclose($outFile);
-            }
+            $this->closeTempFile($inFile);
+            $this->closeTempFile($outFile);
         }
     }
 
@@ -94,18 +86,11 @@ class NativeService implements CmsCryptoInterface
         }
 
         try {
-            $inFile = tmpfile();
-            if (!is_resource($inFile)) {
-                throw CryptoException::decryptCannotCreateTempFile();
-            }
-            $inFilePath = stream_get_meta_data($inFile)['uri'];
-            file_put_contents($inFilePath, $cipherText);
+            $inFile = $this->createTempFileWithContent($cipherText);
+            $inFilePath = $this->getTempFilePath($inFile);
 
-            $outFile = tmpfile();
-            if (!is_resource($outFile)) {
-                throw CryptoException::decryptCannotCreateTempFile();
-            }
-            $outFilePath = stream_get_meta_data($outFile)['uri'];
+            $outFile = $this->createTempFile();
+            $outFilePath = $this->getTempFilePath($outFile);
 
             $result = openssl_cms_decrypt(
                 $inFilePath,
@@ -126,12 +111,8 @@ class NativeService implements CmsCryptoInterface
 
             return $plainText;
         } finally {
-            if (is_resource($inFile)) {
-                fclose($inFile);
-            }
-            if (is_resource($outFile)) {
-                fclose($outFile);
-            }
+            $this->closeTempFile($inFile);
+            $this->closeTempFile($outFile);
         }
     }
 }

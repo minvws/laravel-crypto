@@ -3,7 +3,7 @@
 namespace MinVWS\Crypto\Laravel\Service\Cms;
 
 use MinVWS\Crypto\Laravel\CmsCryptoInterface;
-use MinVWS\Crypto\Laravel\CryptoException;
+use MinVWS\Crypto\Laravel\Exceptions\CryptoException;
 use Symfony\Component\Process\Process;
 
 class ProcessSpawnService implements CmsCryptoInterface
@@ -50,7 +50,7 @@ class ProcessSpawnService implements CmsCryptoInterface
         $process->run();
 
         $errOutput = $process->getErrorOutput();
-        if ($errOutput != "") {
+        if (!empty($errOutput)) {
             throw CryptoException::encrypt($errOutput);
         }
 
@@ -76,7 +76,7 @@ class ProcessSpawnService implements CmsCryptoInterface
         $process->run();
 
         $errOutput = $process->getErrorOutput();
-        if ($errOutput != "") {
+        if (!empty($errOutput)) {
             throw CryptoException::decrypt($errOutput);
         }
 

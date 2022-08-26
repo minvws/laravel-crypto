@@ -2,13 +2,16 @@
 
 namespace MinVWS\Crypto\Laravel\Service\Signature;
 
-use MinVWS\Crypto\Laravel\CryptoException;
+use MinVWS\Crypto\Laravel\Exceptions\CryptoException;
 use MinVWS\Crypto\Laravel\SignatureCryptoInterface;
 use MinVWS\Crypto\Laravel\SignatureSignCryptoInterface;
 use MinVWS\Crypto\Laravel\SignatureVerifyCryptoInterface;
+use MinVWS\Crypto\Laravel\Traits\TempFiles;
 
 class NativeService implements SignatureCryptoInterface, SignatureSignCryptoInterface, SignatureVerifyCryptoInterface
 {
+    use TempFiles;
+
     /** @var ?string */
     protected $certPath;
     /** @var ?string */
@@ -44,23 +47,18 @@ class NativeService implements SignatureCryptoInterface, SignatureSignCryptoInte
         if (!is_readable($this->privKeyPath)) {
             throw CryptoException::cannotReadFile($this->privKeyPath);
         }
+        if (!is_readable($this->certChainPath)) {
+            throw CryptoException::cannotReadFile($this->certChainPath);
+        }
 
         $tmpFileSignature = null;
         $tmpFileData = null;
 
         try {
-            $tmpFileData = tmpfile();
-            if (!is_resource($tmpFileData)) {
-                throw CryptoException::sign("cannot create temp file on disk");
-            }
-            $tmpFileDataPath = stream_get_meta_data($tmpFileData)['uri'];
-            file_put_contents($tmpFileDataPath, $payload);
+            $tmpFileData = $this->createTempFileWithContent($payload);
 
-            $tmpFileSignature = tmpfile();
-            if (!is_resource($tmpFileSignature)) {
-                throw CryptoException::sign("cannot create temp file on disk");
-            }
-            $tmpFileSignaturePath = stream_get_meta_data($tmpFileSignature)['uri'];
+            $tmpFileSignature = $this->createTempFile();
+            $tmpFileSignaturePath = $this->getTempFilePath($tmpFileSignature);
 
             $headers = array();
 
@@ -71,7 +69,7 @@ class NativeService implements SignatureCryptoInterface, SignatureSignCryptoInte
 
             // Sign it
             openssl_cms_sign(
-                $tmpFileDataPath,
+                $this->getTempFilePath($tmpFileData),
                 $tmpFileSignaturePath,
                 $this->certPath,
                 array($this->privKeyPath, $this->privKeyPass),
@@ -90,12 +88,8 @@ class NativeService implements SignatureCryptoInterface, SignatureSignCryptoInte
             return base64_encode($signature);
         } finally {
             // Close/remove temp files, even when errored
-            if (is_resource($tmpFileData)) {
-                fclose($tmpFileData);
-            }
-            if (is_resource($tmpFileSignature)) {
-                fclose($tmpFileSignature);
-            }
+            $this->closeTempFile($tmpFileData);
+            $this->closeTempFile($tmpFileSignature);
         }
     }
 
@@ -110,44 +104,28 @@ class NativeService implements SignatureCryptoInterface, SignatureSignCryptoInte
         $tmpFileContentData = null;
         $tmpFileContentDataPath = null;
         $tmpFileSignedData = null;
-        $tmpFileSignedDataPath = null;
         $tmpFileCertificateData = null;
         $tmpFileCertificateDataPath = null;
 
         try {
             $detached = !is_null($content);
 
-            /** @var resource $tmpFileSignedData */
-            $tmpFileSignedData = tmpfile();
-            if (!is_resource($tmpFileSignedData)) {
-                throw CryptoException::verify("cannot create temp file on disk");
-            }
-            $tmpFileSignedDataPath = stream_get_meta_data($tmpFileSignedData)['uri'];
-            file_put_contents($tmpFileSignedDataPath, base64_decode($signedPayload));
+            $tmpFileSignedData = $this->createTempFileWithContent(base64_decode($signedPayload));
+            $tmpFileSignedDataPath = $this->getTempFilePath($tmpFileSignedData);
 
             $flags = OPENSSL_CMS_NOVERIFY;
             if ($detached) {
                 $flags |= OPENSSL_CMS_DETACHED;
 
-                /** @var resource $tmpFileContentData */
-                $tmpFileContentData = tmpfile();
-                if (!is_resource($tmpFileContentData)) {
-                    throw CryptoException::verify("cannot create temp file on disk");
-                }
-                $tmpFileContentDataPath = stream_get_meta_data($tmpFileContentData)['uri'];
-                file_put_contents($tmpFileContentDataPath, $content);
+                $tmpFileContentData = $this->createTempFileWithContent($content);
+                $tmpFileContentDataPath = $this->getTempFilePath($tmpFileContentData);
             }
 
             if ($certificate) {
                 $flags |= OPENSSL_CMS_NOINTERN;
 
-                /** @var resource $tmpFileCertificateData */
-                $tmpFileCertificateData = tmpfile();
-                if (!is_resource($tmpFileCertificateData)) {
-                    throw CryptoException::verify("cannot create temp file on disk");
-                }
-                $tmpFileCertificateDataPath = stream_get_meta_data($tmpFileCertificateData)['uri'];
-                file_put_contents($tmpFileCertificateDataPath, $certificate);
+                $tmpFileCertificateData = $this->createTempFileWithContent($certificate);
+                $tmpFileCertificateDataPath = $this->getTempFilePath($tmpFileCertificateData);
             }
 
             /*
@@ -171,15 +149,9 @@ class NativeService implements SignatureCryptoInterface, SignatureSignCryptoInte
             return $res;
         } finally {
             // Close/remove temp files, even when errored
-            if (is_resource($tmpFileSignedData)) {
-                fclose($tmpFileSignedData);
-            }
-            if (is_resource($tmpFileContentData)) {
-                fclose($tmpFileContentData);
-            }
-            if (is_resource($tmpFileCertificateData)) {
-                fclose($tmpFileCertificateData);
-            }
+            $this->closeTempFile($tmpFileSignedData);
+            $this->closeTempFile($tmpFileContentData);
+            $this->closeTempFile($tmpFileCertificateData);
         }
     }
 }
