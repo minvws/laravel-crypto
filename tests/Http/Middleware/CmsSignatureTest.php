@@ -1,6 +1,6 @@
 <?php
 
-namespace MinVWS\Crypto\Tests\Http\Middleware;
+namespace MinVWS\Crypto\Laravel\Tests\Http\Middleware;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

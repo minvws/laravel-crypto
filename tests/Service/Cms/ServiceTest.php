@@ -1,8 +1,8 @@
 <?php
 
-namespace MinVWS\Crypto\Tests\Service\Cms;
+namespace MinVWS\Crypto\Laravel\Tests\Service\Cms;
 
-use MinVWS\Crypto\Laravel\CryptoException;
+use MinVWS\Crypto\Laravel\Exceptions\CryptoException;
 use MinVWS\Crypto\Laravel\Service\Cms\NativeService;
 use MinVWS\Crypto\Laravel\Service\Cms\ProcessSpawnService;
 use MinVWS\Crypto\Laravel\CmsCryptoInterface;

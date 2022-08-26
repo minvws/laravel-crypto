@@ -1,8 +1,8 @@
 <?php
 
-namespace MinVWS\Crypto\Tests\Exception;
+namespace MinVWS\Crypto\Laravel\Tests\Exception;
 
-use MinVWS\Crypto\Laravel\CryptoException;
+use MinVWS\Crypto\Laravel\Exceptions\CryptoException;
 use PHPUnit\Framework\TestCase;
 
 class CryptoExceptionTest extends TestCase

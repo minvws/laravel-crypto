@@ -1,6 +1,6 @@
 <?php
 
-namespace MinVWS\Crypto\Tests\Service\Signature;
+namespace MinVWS\Crypto\Laravel\Tests\Service\Signature;
 
 use MinVWS\Crypto\Laravel\Service\Signature\NativeService;
 use MinVWS\Crypto\Laravel\Service\Signature\ProcessSpawnService;
