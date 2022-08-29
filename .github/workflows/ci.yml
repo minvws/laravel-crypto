@@ -13,21 +13,14 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                php: [ 7.3, 7.4, 8.0, 8.1 ]
-                laravel: [ 7.*, 8.*, 9.* ]
+                php: [ 8.0, 8.1, 8.2 ]
+                laravel: [ 8.*, 9.* ]
                 stability: [ prefer-stable ]
                 include:
-                    - laravel: 7.*
-                      testbench: ^5.20
                     - laravel: 8.*
                       testbench: ^6.23
                     - laravel: 9.*
                       testbench: 7.*
-                exclude:
-                    - laravel: 9.*
-                      php: 7.4
-                    - laravel: 9.*
-                      php: 7.3
 
         name: PHP ${{ matrix.php }} - L${{ matrix.laravel }}
         env:
