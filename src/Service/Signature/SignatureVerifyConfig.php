@@ -24,12 +24,6 @@ class SignatureVerifyConfig
         return $this;
     }
 
-    public function setNoIntern(bool $noIntern): self
-    {
-        $this->noIntern = $noIntern;
-        return $this;
-    }
-
     public function getBinary(): bool
     {
         return $this->binary;
@@ -38,11 +32,6 @@ class SignatureVerifyConfig
     public function getNoVerify(): bool
     {
         return $this->noVerify;
-    }
-
-    public function getNoIntern(): bool
-    {
-        return $this->noIntern;
     }
 
 }

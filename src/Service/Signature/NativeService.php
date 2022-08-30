@@ -123,6 +123,8 @@ class NativeService implements SignatureCryptoInterface, SignatureSignCryptoInte
             }
 
             if ($certificate) {
+                $flags |= OPENSSL_CMS_NOINTERN;
+
                 $tmpFileCertificateData = $this->createTempFileWithContent($certificate);
                 $tmpFileCertificateDataPath = $this->getTempFilePath($tmpFileCertificateData);
             }
@@ -162,9 +164,6 @@ class NativeService implements SignatureCryptoInterface, SignatureSignCryptoInte
         }
         if ($config?->getNoVerify()) {
             $flags |= OPENSSL_CMS_NOVERIFY;
-        }
-        if ($config?->getNoIntern()) {
-            $flags |= OPENSSL_CMS_NOINTERN;
         }
 
         return $flags;
