@@ -13,16 +13,16 @@ class NativeService implements CmsCryptoInterface
     /**
      * @var string[] The certificate paths that are used to encrypt the data. The privkey of any of these certs can
      * decrypt the data. Useful when you want to decrypt the same data at multiple places. */
-    protected $encryptionCertsPath;
+    protected array $encryptionCertsPath;
 
     /**
      * @var string Single certificate path used for decrypting the data. The data could be encrypted for multiple
      * certs, but this software only will use this cert to (try to) decode.
      */
-    protected $decryptionCertPath;
+    protected string $decryptionCertPath;
 
     /** @var string Path to private key of the $decryptionCert certificate. Needed to decrypt the actual data. */
-    protected $decryptionCertKeyPath;
+    protected string $decryptionCertKeyPath;
 
     /**
      * @param array $encryptionCertsPath
@@ -55,13 +55,13 @@ class NativeService implements CmsCryptoInterface
             $headers = array();
 
             openssl_cms_encrypt(
-                $inFilePath,
-                $outFilePath,
-                $this->encryptionCertsPath,
-                $headers,
-                OPENSSL_CMS_NOVERIFY,
-                OPENSSL_ENCODING_PEM,
-                OPENSSL_CIPHER_AES_256_CBC
+                input_filename: $inFilePath,
+                output_filename: $outFilePath,
+                certificate: $this->encryptionCertsPath,
+                headers: $headers,
+                flags: OPENSSL_CMS_NOVERIFY,
+                encoding: OPENSSL_ENCODING_PEM,
+                cipher_algo: OPENSSL_CIPHER_AES_256_CBC
             );
 
             // Grab signature contents
@@ -81,6 +81,9 @@ class NativeService implements CmsCryptoInterface
     {
         $outFile = $inFile = null;
 
+        if (!is_readable($this->decryptionCertPath)) {
+            throw CryptoException::cannotReadFile($this->decryptionCertPath);
+        }
         if (!is_readable($this->decryptionCertKeyPath)) {
             throw CryptoException::cannotReadFile($this->decryptionCertKeyPath);
         }
@@ -93,11 +96,11 @@ class NativeService implements CmsCryptoInterface
             $outFilePath = $this->getTempFilePath($outFile);
 
             $result = openssl_cms_decrypt(
-                $inFilePath,
-                $outFilePath,
-                $this->decryptionCertPath,
-                $this->decryptionCertKeyPath,
-                OPENSSL_ENCODING_PEM
+                input_filename: $inFilePath,
+                output_filename: $outFilePath,
+                certificate: $this->decryptionCertPath,
+                private_key: $this->decryptionCertKeyPath,
+                encoding: OPENSSL_ENCODING_PEM
             );
             if (!$result) {
                 throw CryptoException::decrypt("could not decrypt data");

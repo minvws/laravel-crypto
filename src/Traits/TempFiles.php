@@ -23,7 +23,7 @@ trait TempFiles
 
     /**
      * Get the file path of the resource.
-     * @param $resource
+     * @param ?resource $resource
      * @return string
      */
     protected function getTempFilePath($resource): string
@@ -49,6 +49,10 @@ trait TempFiles
         return $tmpFile;
     }
 
+    /**
+     * @param ?resource $tmpFile
+     * @return void
+     */
     protected function closeTempFile($tmpFile): void
     {
         if (!is_resource($tmpFile)) {

@@ -12,14 +12,10 @@ class NativeService implements SignatureCryptoInterface, SignatureSignCryptoInte
 {
     use TempFiles;
 
-    /** @var ?string */
-    protected $certPath;
-    /** @var ?string */
-    protected $privKeyPath;
-    /** @var ?string */
-    protected $privKeyPass;
-    /** @var ?string */
-    protected $certChainPath;
+    protected string $certPath;
+    protected string $privKeyPath;
+    protected string $privKeyPass;
+    protected ?string $certChainPath;
 
     /**
      * NativeService constructor.
@@ -31,9 +27,9 @@ class NativeService implements SignatureCryptoInterface, SignatureSignCryptoInte
      */
     public function __construct(?string $certPath = null, ?string $privKeyPath = null, ?string $privKeyPass = null, ?string $certChainPath = null)
     {
-        $this->certPath = $certPath;
-        $this->privKeyPath = $privKeyPath;
-        $this->privKeyPass = $privKeyPass;
+        $this->certPath = $certPath ?? '';
+        $this->privKeyPath = $privKeyPath ?? '';
+        $this->privKeyPass = $privKeyPass ?? '';
         $this->certChainPath = $certChainPath;
     }
 
@@ -44,10 +40,13 @@ class NativeService implements SignatureCryptoInterface, SignatureSignCryptoInte
      */
     public function sign(string $payload, bool $detached = false): string
     {
+        if (!is_readable($this->certPath)) {
+            throw CryptoException::cannotReadFile($this->certPath);
+        }
         if (!is_readable($this->privKeyPath)) {
             throw CryptoException::cannotReadFile($this->privKeyPath);
         }
-        if (!is_readable($this->certChainPath)) {
+        if (!empty($this->certChainPath) && !is_readable($this->certChainPath)) {
             throw CryptoException::cannotReadFile($this->certChainPath);
         }
 
@@ -69,14 +68,14 @@ class NativeService implements SignatureCryptoInterface, SignatureSignCryptoInte
 
             // Sign it
             openssl_cms_sign(
-                $this->getTempFilePath($tmpFileData),
-                $tmpFileSignaturePath,
-                "file://" . $this->certPath,
-                array("file://" . $this->privKeyPath, $this->privKeyPass),
-                $headers,
-                $flags,
-                OPENSSL_ENCODING_DER,
-                $this->certChainPath
+                input_filename: $this->getTempFilePath($tmpFileData),
+                output_filename: $tmpFileSignaturePath,
+                certificate: "file://" . $this->certPath,
+                private_key: array("file://" . $this->privKeyPath, $this->privKeyPass),
+                headers: $headers,
+                flags: $flags,
+                encoding: OPENSSL_ENCODING_DER,
+                untrusted_certificates_filename: $this->certChainPath
             );
 
             // Grab signature contents
@@ -136,15 +135,15 @@ class NativeService implements SignatureCryptoInterface, SignatureSignCryptoInte
 
             // Verify it
             $res = openssl_cms_verify(
-                ($detached ? $tmpFileContentDataPath : $tmpFileSignedDataPath) ?? '',
-                $flags,
-                null,
-                array($this->certChainPath),
-                $tmpFileCertificateDataPath,
-                null,
-                null,
-                $detached ? $tmpFileSignedDataPath : $tmpFileContentDataPath,
-                OPENSSL_ENCODING_DER,
+                input_filename: ($detached ? $tmpFileContentDataPath : $tmpFileSignedDataPath) ?? '',
+                flags: $flags,
+                certificates: null,
+                ca_info: array($this->certChainPath),
+                untrusted_certificates_filename: $tmpFileCertificateDataPath,
+                content: null,
+                pk7: null,
+                sigfile: $detached ? $tmpFileSignedDataPath : $tmpFileContentDataPath,
+                encoding: OPENSSL_ENCODING_DER,
             );
 
             return $res;

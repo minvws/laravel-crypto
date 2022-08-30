@@ -14,14 +14,10 @@ class ProcessSpawnService implements SignatureCryptoInterface, SignatureSignCryp
 {
     use TempFiles;
 
-    /** @var ?string */
-    protected $certPath;
-    /** @var ?string */
-    protected $privKeyPath;
-    /** @var ?string */
-    protected $privKeyPass;
-    /** @var ?string */
-    protected $certChainPath;
+    protected string $certPath;
+    protected string $privKeyPath;
+    protected string $privKeyPass;
+    protected string $certChainPath;
 
     /**
      * ProcessSpawnService constructor.
@@ -33,10 +29,10 @@ class ProcessSpawnService implements SignatureCryptoInterface, SignatureSignCryp
      */
     public function __construct(?string $certPath = null, ?string $privKeyPath = null, ?string $privKeyPass = null, ?string $certChainPath = null)
     {
-        $this->certPath = $certPath;
-        $this->privKeyPath = $privKeyPath;
-        $this->privKeyPass = $privKeyPass;
-        $this->certChainPath = $certChainPath;
+        $this->certPath = $certPath ?? '';
+        $this->privKeyPath = $privKeyPath ?? '';
+        $this->privKeyPass = $privKeyPass ?? '';
+        $this->certChainPath = $certChainPath ?? '';
     }
 
     /**
@@ -46,8 +42,14 @@ class ProcessSpawnService implements SignatureCryptoInterface, SignatureSignCryp
      */
     public function sign(string $payload, bool $detached = false): string
     {
+        if (!is_readable($this->certPath)) {
+            throw CryptoException::cannotReadFile($this->certPath);
+        }
         if (!is_readable($this->privKeyPath)) {
-            throw FileException::cannotReadFile($this->privKeyPath);
+            throw CryptoException::cannotReadFile($this->privKeyPath);
+        }
+        if (!empty($this->certChainPath) && !is_readable($this->certChainPath)) {
+            throw CryptoException::cannotReadFile($this->certChainPath);
         }
 
         $args = [
