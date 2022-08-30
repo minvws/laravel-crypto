@@ -139,7 +139,7 @@ class NativeService implements SignatureCryptoInterface, SignatureSignCryptoInte
                 ($detached ? $tmpFileContentDataPath : $tmpFileSignedDataPath) ?? '',
                 $flags,
                 null,
-                array(),
+                array($this->certChainPath),
                 $tmpFileCertificateDataPath,
                 null,
                 null,
