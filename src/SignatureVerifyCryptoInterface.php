@@ -13,5 +13,10 @@ interface SignatureVerifyCryptoInterface
      * @param SignatureVerifyConfig|null $verifyConfig Optional verify config.
      * @return bool True when the verification is successful. False otherwise.
      */
-    public function verify(string $signedPayload, string $content = null, string $certificate = null, ?SignatureVerifyConfig $verifyConfig = null): bool;
+    public function verify(
+        string $signedPayload,
+        string $content = null,
+        string $certificate = null,
+        ?SignatureVerifyConfig $verifyConfig = null
+    ): bool;
 }

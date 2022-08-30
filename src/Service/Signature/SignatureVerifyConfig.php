@@ -32,5 +32,4 @@ class SignatureVerifyConfig
     {
         return $this->noVerify;
     }
-
 }

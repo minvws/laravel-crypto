@@ -3,14 +3,11 @@
 namespace MinVWS\Crypto\Laravel\Service\Signature;
 
 use MinVWS\Crypto\Laravel\Exceptions\CryptoException;
-use MinVWS\Crypto\Laravel\Exceptions\FileException;
 use MinVWS\Crypto\Laravel\SignatureCryptoInterface;
-use MinVWS\Crypto\Laravel\SignatureSignCryptoInterface;
-use MinVWS\Crypto\Laravel\SignatureVerifyCryptoInterface;
 use MinVWS\Crypto\Laravel\Traits\TempFiles;
 use Symfony\Component\Process\Process;
 
-class ProcessSpawnService implements SignatureCryptoInterface, SignatureSignCryptoInterface, SignatureVerifyCryptoInterface
+class ProcessSpawnService implements SignatureCryptoInterface
 {
     use TempFiles;
 
@@ -27,8 +24,12 @@ class ProcessSpawnService implements SignatureCryptoInterface, SignatureSignCryp
      * @param string|null $privKeyPass
      * @param string|null $certChainPath
      */
-    public function __construct(?string $certPath = null, ?string $privKeyPath = null, ?string $privKeyPass = null, ?string $certChainPath = null)
-    {
+    public function __construct(
+        ?string $certPath = null,
+        ?string $privKeyPath = null,
+        ?string $privKeyPass = null,
+        ?string $certChainPath = null
+    ) {
         $this->certPath = $certPath ?? '';
         $this->privKeyPath = $privKeyPath ?? '';
         $this->privKeyPass = $privKeyPass ?? '';
@@ -84,13 +85,24 @@ class ProcessSpawnService implements SignatureCryptoInterface, SignatureSignCryp
      * @param SignatureVerifyConfig|null $verifyConfig
      * @return bool
      */
-    public function verify(string $signedPayload, string $content = null, string $certificate = null, ?SignatureVerifyConfig $verifyConfig = null): bool
-    {
+    public function verify(
+        string $signedPayload,
+        string $content = null,
+        string $certificate = null,
+        ?SignatureVerifyConfig $verifyConfig = null
+    ): bool {
         $tmpFile = null;
         $certTmpFile = null;
 
         try {
-            $args = ['openssl', 'cms', '-verify', '-inform', 'DER', '-noout', '-purpose', 'any', ...$this->getOpenSslTags($verifyConfig)];
+            $args = [
+                'openssl', 'cms', '-verify',
+                '-inform', 'DER',
+                '-noout',
+                '-purpose', 'any',
+                ...$this->getOpenSslTags($verifyConfig)
+            ];
+
             if (!empty($this->certChainPath)) {
                 $args = array_merge($args, ['-CAfile', $this->certChainPath]);
             }

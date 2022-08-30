@@ -4,11 +4,9 @@ namespace MinVWS\Crypto\Laravel\Service\Signature;
 
 use MinVWS\Crypto\Laravel\Exceptions\CryptoException;
 use MinVWS\Crypto\Laravel\SignatureCryptoInterface;
-use MinVWS\Crypto\Laravel\SignatureSignCryptoInterface;
-use MinVWS\Crypto\Laravel\SignatureVerifyCryptoInterface;
 use MinVWS\Crypto\Laravel\Traits\TempFiles;
 
-class NativeService implements SignatureCryptoInterface, SignatureSignCryptoInterface, SignatureVerifyCryptoInterface
+class NativeService implements SignatureCryptoInterface
 {
     use TempFiles;
 
@@ -25,8 +23,12 @@ class NativeService implements SignatureCryptoInterface, SignatureSignCryptoInte
      * @param string|null $privKeyPass
      * @param string|null $certChainPath
      */
-    public function __construct(?string $certPath = null, ?string $privKeyPath = null, ?string $privKeyPass = null, ?string $certChainPath = null)
-    {
+    public function __construct(
+        ?string $certPath = null,
+        ?string $privKeyPath = null,
+        ?string $privKeyPass = null,
+        ?string $certChainPath = null
+    ) {
         $this->certPath = $certPath ?? '';
         $this->privKeyPath = $privKeyPath ?? '';
         $this->privKeyPass = $privKeyPass ?? '';
@@ -99,8 +101,12 @@ class NativeService implements SignatureCryptoInterface, SignatureSignCryptoInte
      * @param SignatureVerifyConfig|null $verifyConfig
      * @return bool
      */
-    public function verify(string $signedPayload, string $content = null, string $certificate = null, ?SignatureVerifyConfig $verifyConfig = null): bool
-    {
+    public function verify(
+        string $signedPayload,
+        string $content = null,
+        string $certificate = null,
+        ?SignatureVerifyConfig $verifyConfig = null
+    ): bool {
         $tmpFileContentData = null;
         $tmpFileContentDataPath = null;
         $tmpFileSignedData = null;
