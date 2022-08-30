@@ -11,18 +11,11 @@ class ServiceTest extends TestCase
 {
     public function serviceTypeProvider(): array
     {
-        if (PHP_VERSION_ID >= 80000) {
-            return array(
-                array('native', 'native'),
-                array('spawn', 'spawn'),
-                array('spawn', 'native'),
-                array('native', 'spawn'),
-            );
-        }
-
-        // php7 only uses spawn
         return array(
+            array('native', 'native'),
             array('spawn', 'spawn'),
+            array('spawn', 'native'),
+            array('native', 'spawn'),
         );
     }
 
@@ -74,7 +67,7 @@ class ServiceTest extends TestCase
             './tests/mockdata/cert-001.chain',
         ];
 
-        if ($serviceType == 'native') {
+        if ($serviceType === 'native') {
             return new NativeService(...$args);
         }
 
