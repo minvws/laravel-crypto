@@ -71,8 +71,8 @@ class NativeService implements SignatureCryptoInterface, SignatureSignCryptoInte
             openssl_cms_sign(
                 $this->getTempFilePath($tmpFileData),
                 $tmpFileSignaturePath,
-                $this->certPath,
-                array($this->privKeyPath, $this->privKeyPass),
+                "file://" . $this->certPath,
+                array("file://" . $this->privKeyPath, $this->privKeyPass),
                 $headers,
                 $flags,
                 OPENSSL_ENCODING_DER,
