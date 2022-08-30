@@ -6,7 +6,6 @@ class SignatureVerifyConfig
 {
     protected bool $binary = false;
     protected bool $noVerify = false;
-    protected bool $noIntern = false;
 
     public function __construct()
     {
