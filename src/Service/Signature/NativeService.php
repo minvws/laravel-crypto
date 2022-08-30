@@ -114,7 +114,7 @@ class NativeService implements SignatureCryptoInterface, SignatureSignCryptoInte
             $tmpFileSignedData = $this->createTempFileWithContent(base64_decode($signedPayload));
             $tmpFileSignedDataPath = $this->getTempFilePath($tmpFileSignedData);
 
-            $flags = OPENSSL_CMS_NOVERIFY;
+            $flags = $this->getOpenSslTags($verifyConfig);
             if ($detached) {
                 $flags |= OPENSSL_CMS_DETACHED;
 
@@ -123,8 +123,6 @@ class NativeService implements SignatureCryptoInterface, SignatureSignCryptoInte
             }
 
             if ($certificate) {
-                $flags |= OPENSSL_CMS_NOINTERN;
-
                 $tmpFileCertificateData = $this->createTempFileWithContent($certificate);
                 $tmpFileCertificateDataPath = $this->getTempFilePath($tmpFileCertificateData);
             }
@@ -154,5 +152,21 @@ class NativeService implements SignatureCryptoInterface, SignatureSignCryptoInte
             $this->closeTempFile($tmpFileContentData);
             $this->closeTempFile($tmpFileCertificateData);
         }
+    }
+
+    protected function getOpenSslTags(?SignatureVerifyConfig $config): int
+    {
+        $flags = 0;
+        if ($config?->getBinary()) {
+            $flags |= OPENSSL_CMS_BINARY;
+        }
+        if ($config?->getNoVerify()) {
+            $flags |= OPENSSL_CMS_NOVERIFY;
+        }
+        if ($config?->getNoIntern()) {
+            $flags |= OPENSSL_CMS_NOINTERN;
+        }
+
+        return $flags;
     }
 }
