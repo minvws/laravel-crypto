@@ -11,24 +11,24 @@ class SignatureVerifyConfig
     {
     }
 
-    protected function setBinary(bool $binary): self
+    public function setBinary(bool $binary): self
     {
         $this->binary = $binary;
         return $this;
     }
 
-    protected function setNoVerify(bool $noVerify): self
+    public function setNoVerify(bool $noVerify): self
     {
         $this->noVerify = $noVerify;
         return $this;
     }
 
-    protected function getBinary(): bool
+    public function getBinary(): bool
     {
         return $this->binary;
     }
 
-    protected function getNoVerify(): bool
+    public function getNoVerify(): bool
     {
         return $this->noVerify;
     }
