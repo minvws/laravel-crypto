@@ -13,7 +13,7 @@ class NativeService implements SignatureCryptoInterface
     protected string $certPath;
     protected string $privKeyPath;
     protected string $privKeyPass;
-    protected ?string $certChainPath;
+    protected string $certChainPath;
 
     /**
      * NativeService constructor.
@@ -32,7 +32,7 @@ class NativeService implements SignatureCryptoInterface
         $this->certPath = $certPath ?? '';
         $this->privKeyPath = $privKeyPath ?? '';
         $this->privKeyPass = $privKeyPass ?? '';
-        $this->certChainPath = $certChainPath;
+        $this->certChainPath = $certChainPath ?? '';
     }
 
     /**
@@ -107,6 +107,8 @@ class NativeService implements SignatureCryptoInterface
         string $certificate = null,
         ?SignatureVerifyConfig $verifyConfig = null
     ): bool {
+        $verifyConfig = $verifyConfig ?? new SignatureVerifyConfig();
+
         $tmpFileContentData = null;
         $tmpFileContentDataPath = null;
         $tmpFileSignedData = null;
@@ -161,13 +163,13 @@ class NativeService implements SignatureCryptoInterface
         }
     }
 
-    protected function getOpenSslTags(?SignatureVerifyConfig $config): int
+    protected function getOpenSslTags(SignatureVerifyConfig $config): int
     {
         $flags = 0;
-        if ($config?->getBinary()) {
+        if ($config->getBinary()) {
             $flags |= OPENSSL_CMS_BINARY;
         }
-        if ($config?->getNoVerify()) {
+        if ($config->getNoVerify()) {
             $flags |= OPENSSL_CMS_NOVERIFY;
         }
 
