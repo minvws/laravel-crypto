@@ -95,13 +95,12 @@ class ProcessSpawnService implements SignatureCryptoInterface
         $certTmpFile = null;
 
         try {
-            $args = [
+            $args = array_merge([
                 'openssl', 'cms', '-verify',
                 '-inform', 'DER',
                 '-noout',
                 '-purpose', 'any',
-                ...$this->getOpenSslTags($verifyConfig)
-            ];
+            ], $this->getOpenSslTags($verifyConfig));
 
             if (!empty($this->certChainPath)) {
                 $args = array_merge($args, ['-CAfile', $this->certChainPath]);
@@ -138,8 +137,6 @@ class ProcessSpawnService implements SignatureCryptoInterface
             $this->closeTempFile($certTmpFile);
         }
     }
-
-
 
     protected function getOpenSslTags(?SignatureVerifyConfig $config): array
     {
