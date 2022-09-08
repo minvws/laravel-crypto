@@ -69,7 +69,11 @@
         "vendor/bin/phpstan analyse",
         "vendor/bin/psalm",
         "vendor/bin/phpcs"
-    ]
+    ],
+    "phpcs": "phpcs --standard=phpcs.xml",
+    "phpmd": "phpmd phpmd.xml",
+    "phpstan": "vendor/bin/phpstan",
+    "psalm": "vendor/bin/psalm --config=psalm.xml"
   },
   "config": {
     "allow-plugins": {
