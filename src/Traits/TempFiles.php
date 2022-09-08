@@ -14,9 +14,7 @@ trait TempFiles
     public function createTempFileWithContent(string $content)
     {
         $tmpFile = $this->createTempFile();
-
-        $tmpFilePath = $this->getTempFilePath($tmpFile);
-        file_put_contents($tmpFilePath, $content);
+        fwrite($tmpFile, $content);
 
         return $tmpFile;
     }
