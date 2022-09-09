@@ -54,7 +54,8 @@
     }
   },
   "suggest": {
-    "ext-openssl": "Install the OpenSSL extension in order to speed up a wide variety of cryptographic operations."
+    "ext-openssl": "Install the OpenSSL extension in order to speed up a wide variety of cryptographic operations.",
+    "ext-sodium": "Install the sodium extension in order to use the Sealbox Service."
   },
   "extra": {
     "laravel": {
