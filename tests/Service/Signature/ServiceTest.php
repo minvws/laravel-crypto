@@ -4,7 +4,9 @@ namespace MinVWS\Crypto\Laravel\Tests\Service\Signature;
 
 use MinVWS\Crypto\Laravel\Service\Signature\NativeService;
 use MinVWS\Crypto\Laravel\Service\Signature\ProcessSpawnService;
+use MinVWS\Crypto\Laravel\Service\TempFileService;
 use MinVWS\Crypto\Laravel\SignatureCryptoInterface;
+use MinVWS\Crypto\Laravel\TempFileInterface;
 use PHPUnit\Framework\TestCase;
 
 class ServiceTest extends TestCase
@@ -65,6 +67,7 @@ class ServiceTest extends TestCase
             './tests/mockdata/cert-001.key',
             '',
             './tests/mockdata/cert-001.chain',
+            new TempFileService()
         ];
 
         if ($serviceType === 'native') {

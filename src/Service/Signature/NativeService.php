@@ -4,16 +4,15 @@ namespace MinVWS\Crypto\Laravel\Service\Signature;
 
 use MinVWS\Crypto\Laravel\Exceptions\CryptoException;
 use MinVWS\Crypto\Laravel\SignatureCryptoInterface;
-use MinVWS\Crypto\Laravel\Traits\TempFiles;
+use MinVWS\Crypto\Laravel\TempFileInterface;
 
 class NativeService implements SignatureCryptoInterface
 {
-    use TempFiles;
-
     protected string $certPath;
     protected string $privKeyPath;
     protected string $privKeyPass;
     protected string $certChainPath;
+    protected TempFileInterface $tempFileService;
 
     /**
      * NativeService constructor.
@@ -27,12 +26,14 @@ class NativeService implements SignatureCryptoInterface
         ?string $certPath = null,
         ?string $privKeyPath = null,
         ?string $privKeyPass = null,
-        ?string $certChainPath = null
+        ?string $certChainPath = null,
+        ?TempFileInterface $tempFileService,
     ) {
         $this->certPath = $certPath ?? '';
         $this->privKeyPath = $privKeyPath ?? '';
         $this->privKeyPass = $privKeyPass ?? '';
         $this->certChainPath = $certChainPath ?? '';
+        $this->tempFileService = $tempFileService ?? app(TempFileInterface::class);
     }
 
     /**
@@ -56,10 +57,10 @@ class NativeService implements SignatureCryptoInterface
         $tmpFileData = null;
 
         try {
-            $tmpFileData = $this->createTempFileWithContent($payload);
+            $tmpFileData = $this->tempFileService->createTempFileWithContent($payload);
 
-            $tmpFileSignature = $this->createTempFile();
-            $tmpFileSignaturePath = $this->getTempFilePath($tmpFileSignature);
+            $tmpFileSignature = $this->tempFileService->createTempFile();
+            $tmpFileSignaturePath = $this->tempFileService->getTempFilePath($tmpFileSignature);
 
             $headers = array();
 
@@ -70,7 +71,7 @@ class NativeService implements SignatureCryptoInterface
 
             // Sign it
             openssl_cms_sign(
-                input_filename: $this->getTempFilePath($tmpFileData),
+                input_filename: $this->tempFileService->getTempFilePath($tmpFileData),
                 output_filename: $tmpFileSignaturePath,
                 certificate: "file://" . $this->certPath,
                 private_key: array("file://" . $this->privKeyPath, $this->privKeyPass),
@@ -89,8 +90,8 @@ class NativeService implements SignatureCryptoInterface
             return base64_encode($signature);
         } finally {
             // Close/remove temp files, even when errored
-            $this->closeTempFile($tmpFileData);
-            $this->closeTempFile($tmpFileSignature);
+            $this->tempFileService->closeTempFile($tmpFileData);
+            $this->tempFileService->closeTempFile($tmpFileSignature);
         }
     }
 
@@ -118,22 +119,22 @@ class NativeService implements SignatureCryptoInterface
         try {
             $detached = !is_null($content);
 
-            $tmpFileSignedData = $this->createTempFileWithContent(base64_decode($signedPayload));
-            $tmpFileSignedDataPath = $this->getTempFilePath($tmpFileSignedData);
+            $tmpFileSignedData = $this->tempFileService->createTempFileWithContent(base64_decode($signedPayload));
+            $tmpFileSignedDataPath = $this->tempFileService->getTempFilePath($tmpFileSignedData);
 
             $flags = $this->getOpenSslTags($verifyConfig);
             if ($detached) {
                 $flags |= OPENSSL_CMS_DETACHED;
 
-                $tmpFileContentData = $this->createTempFileWithContent($content);
-                $tmpFileContentDataPath = $this->getTempFilePath($tmpFileContentData);
+                $tmpFileContentData = $this->tempFileService->createTempFileWithContent($content);
+                $tmpFileContentDataPath = $this->tempFileService->getTempFilePath($tmpFileContentData);
             }
 
             if ($certificate) {
                 $flags |= OPENSSL_CMS_NOINTERN;
 
-                $tmpFileCertificateData = $this->createTempFileWithContent($certificate);
-                $tmpFileCertificateDataPath = $this->getTempFilePath($tmpFileCertificateData);
+                $tmpFileCertificateData = $this->tempFileService->createTempFileWithContent($certificate);
+                $tmpFileCertificateDataPath = $this->tempFileService->getTempFilePath($tmpFileCertificateData);
             }
 
             /*
@@ -157,9 +158,9 @@ class NativeService implements SignatureCryptoInterface
             return $res;
         } finally {
             // Close/remove temp files, even when errored
-            $this->closeTempFile($tmpFileSignedData);
-            $this->closeTempFile($tmpFileContentData);
-            $this->closeTempFile($tmpFileCertificateData);
+            $this->tempFileService->closeTempFile($tmpFileSignedData);
+            $this->tempFileService->closeTempFile($tmpFileContentData);
+            $this->tempFileService->closeTempFile($tmpFileCertificateData);
         }
     }
 

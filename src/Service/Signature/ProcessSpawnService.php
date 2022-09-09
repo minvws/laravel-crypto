@@ -4,17 +4,16 @@ namespace MinVWS\Crypto\Laravel\Service\Signature;
 
 use MinVWS\Crypto\Laravel\Exceptions\CryptoException;
 use MinVWS\Crypto\Laravel\SignatureCryptoInterface;
-use MinVWS\Crypto\Laravel\Traits\TempFiles;
+use MinVWS\Crypto\Laravel\TempFileInterface;
 use Symfony\Component\Process\Process;
 
 class ProcessSpawnService implements SignatureCryptoInterface
 {
-    use TempFiles;
-
     protected string $certPath;
     protected string $privKeyPath;
     protected string $privKeyPass;
     protected string $certChainPath;
+    protected TempFileInterface $tempFileService;
 
     /**
      * ProcessSpawnService constructor.
@@ -28,12 +27,14 @@ class ProcessSpawnService implements SignatureCryptoInterface
         ?string $certPath = null,
         ?string $privKeyPath = null,
         ?string $privKeyPass = null,
-        ?string $certChainPath = null
+        ?string $certChainPath = null,
+        ?TempFileInterface $tempFileService,
     ) {
         $this->certPath = $certPath ?? '';
         $this->privKeyPath = $privKeyPath ?? '';
         $this->privKeyPass = $privKeyPass ?? '';
         $this->certChainPath = $certChainPath ?? '';
+        $this->tempFileService = $tempFileService ?? app(TempFileInterface::class);
     }
 
     /**
@@ -107,13 +108,20 @@ class ProcessSpawnService implements SignatureCryptoInterface
             }
 
             if ($content !== null) {
-                $tmpFile = $this->createTempFileWithContent($content);
-                $args = array_merge($args, ['-content', $this->getTempFilePath($tmpFile)]);
+                $tmpFile = $this->tempFileService->createTempFileWithContent($content);
+                $args = array_merge($args, ['-content', $this->tempFileService->getTempFilePath($tmpFile)]);
             }
 
             if ($certificate !== null) {
-                $certTmpFile = $this->createTempFileWithContent($certificate);
-                $args = array_merge($args, ['-certfile', $this->getTempFilePath($certTmpFile), '-nointern']);
+                $certTmpFile = $this->tempFileService->createTempFileWithContent($certificate);
+                $args = array_merge(
+                    $args,
+                    [
+                        '-certfile',
+                        $this->tempFileService->getTempFilePath($certTmpFile),
+                        '-nointern',
+                    ],
+                );
             }
 
             $process = new Process($args);
@@ -133,8 +141,8 @@ class ProcessSpawnService implements SignatureCryptoInterface
 
             return $process->getExitCode() === 0;
         } finally {
-            $this->closeTempFile($tmpFile);
-            $this->closeTempFile($certTmpFile);
+            $this->tempFileService->closeTempFile($tmpFile);
+            $this->tempFileService->closeTempFile($certTmpFile);
         }
     }
 

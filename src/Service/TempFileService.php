@@ -1,10 +1,11 @@
 <?php
 
-namespace MinVWS\Crypto\Laravel\Traits;
+namespace MinVWS\Crypto\Laravel\Service;
 
 use MinVWS\Crypto\Laravel\Exceptions\FileException;
+use MinVWS\Crypto\Laravel\TempFileInterface;
 
-trait TempFiles
+class TempFileService implements TempFileInterface
 {
     /**
      * Creates a temp file with the supplied content and return the path of the file.
@@ -24,7 +25,7 @@ trait TempFiles
      * @param ?resource $resource
      * @return string
      */
-    protected function getTempFilePath($resource): string
+    public function getTempFilePath($resource): string
     {
         if (!is_resource($resource)) {
             throw FileException::variableIsNotAResource();
@@ -37,7 +38,7 @@ trait TempFiles
      * Creates a temp file
      * @return resource
      */
-    protected function createTempFile()
+    public function createTempFile()
     {
         $tmpFile = tmpfile();
         if (!is_resource($tmpFile)) {
@@ -51,7 +52,7 @@ trait TempFiles
      * @param ?resource $tmpFile
      * @return void
      */
-    protected function closeTempFile($tmpFile): void
+    public function closeTempFile($tmpFile): void
     {
         if (!is_resource($tmpFile)) {
             return;

@@ -4,12 +4,10 @@ namespace MinVWS\Crypto\Laravel\Service\Cms;
 
 use MinVWS\Crypto\Laravel\CmsCryptoInterface;
 use MinVWS\Crypto\Laravel\Exceptions\CryptoException;
-use MinVWS\Crypto\Laravel\Traits\TempFiles;
+use MinVWS\Crypto\Laravel\TempFileInterface;
 
 class NativeService implements CmsCryptoInterface
 {
-    use TempFiles;
-
     /**
      * @var string[] The certificate paths that are used to encrypt the data. The privkey of any of these certs can
      * decrypt the data. Useful when you want to decrypt the same data at multiple places. */
@@ -24,13 +22,20 @@ class NativeService implements CmsCryptoInterface
     /** @var string Path to private key of the $decryptionCert certificate. Needed to decrypt the actual data. */
     protected string $decryptionCertKeyPath;
 
+    protected TempFileInterface $tempFileService;
+
     /**
      * @param array $encryptionCertsPath
      * @param string $decryptionCertPath
      * @param string $decryptionCertKeyPath
+     * @param TempFileInterface $tempFileService
      */
-    public function __construct(array $encryptionCertsPath, string $decryptionCertPath, string $decryptionCertKeyPath)
-    {
+    public function __construct(
+        array $encryptionCertsPath,
+        string $decryptionCertPath,
+        string $decryptionCertKeyPath,
+        TempFileInterface $tempFileService
+    ) {
         // All path names should be prefixed with file://
         $paths = [];
         foreach ($encryptionCertsPath as $p) {
@@ -39,6 +44,7 @@ class NativeService implements CmsCryptoInterface
         $this->encryptionCertsPath = $paths;
         $this->decryptionCertPath = "file://" . $decryptionCertPath;
         $this->decryptionCertKeyPath = "file://" . $decryptionCertKeyPath;
+        $this->tempFileService = $tempFileService;
     }
 
     public function encrypt(string $plainText): string
@@ -46,11 +52,11 @@ class NativeService implements CmsCryptoInterface
         $outFile = $inFile = null;
 
         try {
-            $inFile = $this->createTempFileWithContent($plainText);
-            $inFilePath = $this->getTempFilePath($inFile);
+            $inFile = $this->tempFileService->createTempFileWithContent($plainText);
+            $inFilePath = $this->tempFileService->getTempFilePath($inFile);
 
-            $outFile = $this->createTempFile();
-            $outFilePath = $this->getTempFilePath($outFile);
+            $outFile = $this->tempFileService->createTempFile();
+            $outFilePath = $this->tempFileService->getTempFilePath($outFile);
 
             $headers = array();
 
@@ -72,8 +78,8 @@ class NativeService implements CmsCryptoInterface
 
             return $cipherText;
         } finally {
-            $this->closeTempFile($inFile);
-            $this->closeTempFile($outFile);
+            $this->tempFileService->closeTempFile($inFile);
+            $this->tempFileService->closeTempFile($outFile);
         }
     }
 
@@ -89,11 +95,11 @@ class NativeService implements CmsCryptoInterface
         }
 
         try {
-            $inFile = $this->createTempFileWithContent($cipherText);
-            $inFilePath = $this->getTempFilePath($inFile);
+            $inFile = $this->tempFileService->createTempFileWithContent($cipherText);
+            $inFilePath = $this->tempFileService->getTempFilePath($inFile);
 
-            $outFile = $this->createTempFile();
-            $outFilePath = $this->getTempFilePath($outFile);
+            $outFile = $this->tempFileService->createTempFile();
+            $outFilePath = $this->tempFileService->getTempFilePath($outFile);
 
             $result = openssl_cms_decrypt(
                 input_filename: $inFilePath,
@@ -114,8 +120,8 @@ class NativeService implements CmsCryptoInterface
 
             return $plainText;
         } finally {
-            $this->closeTempFile($inFile);
-            $this->closeTempFile($outFile);
+            $this->tempFileService->closeTempFile($inFile);
+            $this->tempFileService->closeTempFile($outFile);
         }
     }
 }
