@@ -2,40 +2,38 @@
 
 namespace MinVWS\Crypto\Laravel\Service\Signature;
 
-use Illuminate\Support\Facades\Log;
-use MinVWS\Crypto\Laravel\CryptoException;
+use MinVWS\Crypto\Laravel\Exceptions\CryptoException;
 use MinVWS\Crypto\Laravel\SignatureCryptoInterface;
-use Symfony\Component\Process\Process;
+use MinVWS\Crypto\Laravel\TempFileInterface;
 
 class NativeService implements SignatureCryptoInterface
 {
-    /** @var string */
-    protected $certPath;
-    /** @var string */
-    protected $privKeyPath;
-    /** @var string */
-    protected $privKeyPass;
-    /** @var string */
-    protected $certChainPath;
+    protected string $certPath;
+    protected string $privKeyPath;
+    protected string $privKeyPass;
+    protected string $certChainPath;
+    protected TempFileInterface $tempFileService;
 
     /**
      * NativeService constructor.
      *
-     * @param string $certPath
-     * @param string $privKeyPath
-     * @param string $privKeyPass
-     * @param string $certChainPath
+     * @param string|null $certPath
+     * @param string|null $privKeyPath
+     * @param string|null $privKeyPass
+     * @param string|null $certChainPath
      */
-    public function __construct(string $certPath, string $privKeyPath, string $privKeyPass, string $certChainPath)
-    {
-        $this->certPath = "file://" . $certPath;
-        $this->privKeyPath = "file://" . $privKeyPath;
-        $this->privKeyPass = $privKeyPass;
-        $this->certChainPath = $certChainPath;
-
-        if (!is_readable($privKeyPath)) {
-            throw CryptoException::cannotReadFile($privKeyPath);
-        }
+    public function __construct(
+        ?string $certPath = null,
+        ?string $privKeyPath = null,
+        ?string $privKeyPass = null,
+        ?string $certChainPath = null,
+        ?TempFileInterface $tempFileService,
+    ) {
+        $this->certPath = $certPath ?? '';
+        $this->privKeyPath = $privKeyPath ?? '';
+        $this->privKeyPass = $privKeyPass ?? '';
+        $this->certChainPath = $certChainPath ?? '';
+        $this->tempFileService = $tempFileService ?? app(TempFileInterface::class);
     }
 
     /**
@@ -45,22 +43,24 @@ class NativeService implements SignatureCryptoInterface
      */
     public function sign(string $payload, bool $detached = false): string
     {
+        if (!is_readable($this->certPath)) {
+            throw CryptoException::cannotReadFile($this->certPath);
+        }
+        if (!is_readable($this->privKeyPath)) {
+            throw CryptoException::cannotReadFile($this->privKeyPath);
+        }
+        if (!empty($this->certChainPath) && !is_readable($this->certChainPath)) {
+            throw CryptoException::cannotReadFile($this->certChainPath);
+        }
+
         $tmpFileSignature = null;
         $tmpFileData = null;
 
         try {
-            $tmpFileData = tmpfile();
-            if (!is_resource($tmpFileData)) {
-                throw CryptoException::sign("cannot create temp file on disk");
-            }
-            $tmpFileDataPath = stream_get_meta_data($tmpFileData)['uri'];
-            file_put_contents($tmpFileDataPath, $payload);
+            $tmpFileData = $this->tempFileService->createTempFileWithContent($payload);
 
-            $tmpFileSignature = tmpfile();
-            if (!is_resource($tmpFileSignature)) {
-                throw CryptoException::sign("cannot create temp file on disk");
-            }
-            $tmpFileSignaturePath = stream_get_meta_data($tmpFileSignature)['uri'];
+            $tmpFileSignature = $this->tempFileService->createTempFile();
+            $tmpFileSignaturePath = $this->tempFileService->getTempFilePath($tmpFileSignature);
 
             $headers = array();
 
@@ -71,14 +71,14 @@ class NativeService implements SignatureCryptoInterface
 
             // Sign it
             openssl_cms_sign(
-                $tmpFileDataPath,
-                $tmpFileSignaturePath,
-                $this->certPath,
-                array($this->privKeyPath, $this->privKeyPass),
-                $headers,
-                $flags,
-                OPENSSL_ENCODING_DER,
-                $this->certChainPath
+                input_filename: $this->tempFileService->getTempFilePath($tmpFileData),
+                output_filename: $tmpFileSignaturePath,
+                certificate: "file://" . $this->certPath,
+                private_key: array("file://" . $this->privKeyPath, $this->privKeyPass),
+                headers: $headers,
+                flags: $flags,
+                encoding: OPENSSL_ENCODING_DER,
+                untrusted_certificates_filename: $this->certChainPath
             );
 
             // Grab signature contents
@@ -90,12 +90,8 @@ class NativeService implements SignatureCryptoInterface
             return base64_encode($signature);
         } finally {
             // Close/remove temp files, even when errored
-            if (is_resource($tmpFileData)) {
-                fclose($tmpFileData);
-            }
-            if (is_resource($tmpFileSignature)) {
-                fclose($tmpFileSignature);
-            }
+            $this->tempFileService->closeTempFile($tmpFileData);
+            $this->tempFileService->closeTempFile($tmpFileSignature);
         }
     }
 
@@ -103,51 +99,42 @@ class NativeService implements SignatureCryptoInterface
      * @param string $signedPayload
      * @param string|null $content
      * @param string|null $certificate
+     * @param SignatureVerifyConfig|null $verifyConfig
      * @return bool
      */
-    public function verify(string $signedPayload, string $content = null, string $certificate = null): bool
-    {
+    public function verify(
+        string $signedPayload,
+        string $content = null,
+        string $certificate = null,
+        ?SignatureVerifyConfig $verifyConfig = null
+    ): bool {
+        $verifyConfig = $verifyConfig ?? new SignatureVerifyConfig();
+
         $tmpFileContentData = null;
         $tmpFileContentDataPath = null;
         $tmpFileSignedData = null;
-        $tmpFileSignedDataPath = null;
         $tmpFileCertificateData = null;
         $tmpFileCertificateDataPath = null;
 
         try {
             $detached = !is_null($content);
 
-            /** @var resource $tmpFileSignedData */
-            $tmpFileSignedData = tmpfile();
-            if (!is_resource($tmpFileSignedData)) {
-                throw CryptoException::verify("cannot create temp file on disk");
-            }
-            $tmpFileSignedDataPath = stream_get_meta_data($tmpFileSignedData)['uri'];
-            file_put_contents($tmpFileSignedDataPath, base64_decode($signedPayload));
+            $tmpFileSignedData = $this->tempFileService->createTempFileWithContent(base64_decode($signedPayload));
+            $tmpFileSignedDataPath = $this->tempFileService->getTempFilePath($tmpFileSignedData);
 
-            $flags = OPENSSL_CMS_NOVERIFY;
+            $flags = $this->getOpenSslTags($verifyConfig);
             if ($detached) {
                 $flags |= OPENSSL_CMS_DETACHED;
 
-                /** @var resource $tmpFileContentData */
-                $tmpFileContentData = tmpfile();
-                if (!is_resource($tmpFileContentData)) {
-                    throw CryptoException::verify("cannot create temp file on disk");
-                }
-                $tmpFileContentDataPath = stream_get_meta_data($tmpFileContentData)['uri'];
-                file_put_contents($tmpFileContentDataPath, $content);
+                $tmpFileContentData = $this->tempFileService->createTempFileWithContent($content);
+                $tmpFileContentDataPath = $this->tempFileService->getTempFilePath($tmpFileContentData);
             }
 
             if ($certificate) {
                 $flags |= OPENSSL_CMS_NOINTERN;
 
-                /** @var resource $tmpFileCertificateData */
-                $tmpFileCertificateData = tmpfile();
-                if (!is_resource($tmpFileCertificateData)) {
-                    throw CryptoException::verify("cannot create temp file on disk");
-                }
-                $tmpFileCertificateDataPath = stream_get_meta_data($tmpFileCertificateData)['uri'];
-                file_put_contents($tmpFileCertificateDataPath, $certificate);
+                $tmpFileCertificateData = $this->tempFileService->createTempFileWithContent($certificate);
+                $tmpFileCertificateDataPath = $this->tempFileService->getTempFilePath($tmpFileCertificateData);
             }
 
             /*
@@ -157,29 +144,36 @@ class NativeService implements SignatureCryptoInterface
 
             // Verify it
             $res = openssl_cms_verify(
-                ($detached ? $tmpFileContentDataPath : $tmpFileSignedDataPath) ?? '',
-                $flags,
-                null,
-                array(),
-                $tmpFileCertificateDataPath,
-                null,
-                null,
-                $detached ? $tmpFileSignedDataPath : $tmpFileContentDataPath,
-                OPENSSL_ENCODING_DER,
+                input_filename: ($detached ? $tmpFileContentDataPath : $tmpFileSignedDataPath) ?? '',
+                flags: $flags,
+                certificates: null,
+                ca_info: array($this->certChainPath),
+                untrusted_certificates_filename: $tmpFileCertificateDataPath,
+                content: null,
+                pk7: null,
+                sigfile: $detached ? $tmpFileSignedDataPath : $tmpFileContentDataPath,
+                encoding: OPENSSL_ENCODING_DER,
             );
 
             return $res;
         } finally {
             // Close/remove temp files, even when errored
-            if (is_resource($tmpFileSignedData)) {
-                fclose($tmpFileSignedData);
-            }
-            if (is_resource($tmpFileContentData)) {
-                fclose($tmpFileContentData);
-            }
-            if (is_resource($tmpFileCertificateData)) {
-                fclose($tmpFileCertificateData);
-            }
+            $this->tempFileService->closeTempFile($tmpFileSignedData);
+            $this->tempFileService->closeTempFile($tmpFileContentData);
+            $this->tempFileService->closeTempFile($tmpFileCertificateData);
         }
+    }
+
+    protected function getOpenSslTags(SignatureVerifyConfig $config): int
+    {
+        $flags = 0;
+        if ($config->getBinary()) {
+            $flags |= OPENSSL_CMS_BINARY;
+        }
+        if ($config->getNoVerify()) {
+            $flags |= OPENSSL_CMS_NOVERIFY;
+        }
+
+        return $flags;
     }
 }

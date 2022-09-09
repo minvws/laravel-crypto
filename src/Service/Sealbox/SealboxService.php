@@ -2,7 +2,8 @@
 
 namespace MinVWS\Crypto\Laravel\Service\Sealbox;
 
-use MinVWS\Crypto\Laravel\CryptoException;
+use Exception;
+use MinVWS\Crypto\Laravel\Exceptions\CryptoException;
 use MinVWS\Crypto\Laravel\SealboxCryptoInterface;
 
 class SealboxService implements SealboxCryptoInterface
@@ -18,7 +19,6 @@ class SealboxService implements SealboxCryptoInterface
      *
      * @param string $privKey
      * @param string $recipientPubKey
-     * @throws \SodiumException
      */
     public function __construct(string $privKey, string $recipientPubKey)
     {
@@ -34,10 +34,7 @@ class SealboxService implements SealboxCryptoInterface
     {
         try {
             $ciphertext = sodium_crypto_box_seal($plainText, $this->recipientPubKey);
-            if ($ciphertext == false) {
-                throw CryptoException::encrypt();
-            }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw CryptoException::encrypt($e->getMessage());
         }
 
@@ -57,10 +54,10 @@ class SealboxService implements SealboxCryptoInterface
             );
 
             $plaintext = sodium_crypto_box_seal_open($cipherText, $keyPair);
-            if ($plaintext == false) {
+            if ($plaintext === false) {
                 throw CryptoException::decrypt("sealbox could not be opened");
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw CryptoException::decrypt($e->getMessage());
         }
 

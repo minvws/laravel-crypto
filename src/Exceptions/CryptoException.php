@@ -1,6 +1,6 @@
 <?php
 
-namespace MinVWS\Crypto\Laravel;
+namespace MinVWS\Crypto\Laravel\Exceptions;
 
 class CryptoException extends \RuntimeException
 {
@@ -8,7 +8,7 @@ class CryptoException extends \RuntimeException
      * @param string $msg
      * @return CryptoException
      */
-    public static function encrypt(string $msg = "")
+    public static function encrypt(string $msg = ""): CryptoException
     {
         if (! empty($msg)) {
             $msg = ": " . $msg;
@@ -21,7 +21,7 @@ class CryptoException extends \RuntimeException
      * @param string $msg
      * @return CryptoException
      */
-    public static function decrypt(string $msg = "")
+    public static function decrypt(string $msg = ""): CryptoException
     {
         if (! empty($msg)) {
             $msg = ": " . $msg;
@@ -34,7 +34,7 @@ class CryptoException extends \RuntimeException
      * @param string $msg
      * @return CryptoException
      */
-    public static function sign(string $msg = "")
+    public static function sign(string $msg = ""): CryptoException
     {
         if (! empty($msg)) {
             $msg = ": " . $msg;
@@ -47,7 +47,7 @@ class CryptoException extends \RuntimeException
      * @param string $msg
      * @return CryptoException
      */
-    public static function verify(string $msg = "")
+    public static function verify(string $msg = ""): CryptoException
     {
         if (! empty($msg)) {
             $msg = ": " . $msg;
@@ -57,26 +57,10 @@ class CryptoException extends \RuntimeException
     }
 
     /**
-     * @return CryptoException
-     */
-    public static function encryptCannotCreateTempFile()
-    {
-        return self::encrypt("cannot create temp file on disk");
-    }
-
-    /**
-     * @return CryptoException
-     */
-    public static function decryptCannotCreateTempFile()
-    {
-        return self::decrypt("cannot create temp file on disk");
-    }
-
-    /**
      * @param string $path
      * @return CryptoException
      */
-    public static function cannotReadFile(string $path)
+    public static function cannotReadFile(string $path): CryptoException
     {
         return new self(sprintf("Error while reading keyfile %s: file is not readable by user (try chmod 644)", $path));
     }

@@ -29,8 +29,8 @@
     }
   ],
   "require": {
-    "php": "^8.0|^8.1|^8.2",
-    "laravel/framework": "^8.0|^9.0"
+    "php": "^8.0||^8.1||^8.2",
+    "laravel/framework": "^8.0||^9.0"
   },
   "require-dev": {
     "orchestra/testbench": "^6.0",
@@ -54,7 +54,8 @@
     }
   },
   "suggest": {
-    "ext-openssl": "Install the OpenSSL extension in order to speed up a wide variety of cryptographic operations."
+    "ext-openssl": "Install the OpenSSL extension in order to speed up a wide variety of cryptographic operations.",
+    "ext-sodium": "Install the sodium extension in order to use the Sealbox Service."
   },
   "extra": {
     "laravel": {
@@ -69,7 +70,11 @@
         "vendor/bin/phpstan analyse",
         "vendor/bin/psalm",
         "vendor/bin/phpcs"
-    ]
+    ],
+    "phpcs": "phpcs --standard=phpcs.xml",
+    "phpmd": "phpmd phpmd.xml",
+    "phpstan": "vendor/bin/phpstan",
+    "psalm": "vendor/bin/psalm --config=psalm.xml"
   },
   "config": {
     "allow-plugins": {

@@ -1,8 +1,8 @@
 <?php
 
-namespace MinVWS\Crypto\Tests\Service\Sealbox;
+namespace MinVWS\Crypto\Laravel\Tests\Service\Sealbox;
 
-use MinVWS\Crypto\Laravel\CryptoException;
+use MinVWS\Crypto\Laravel\Exceptions\CryptoException;
 use MinVWS\Crypto\Laravel\SealboxCryptoInterface;
 use MinVWS\Crypto\Laravel\Service\Sealbox\SealboxService;
 use PHPUnit\Framework\TestCase;

@@ -2,39 +2,39 @@
 
 namespace MinVWS\Crypto\Laravel\Service\Signature;
 
-use MinVWS\Crypto\Laravel\CryptoException;
+use MinVWS\Crypto\Laravel\Exceptions\CryptoException;
 use MinVWS\Crypto\Laravel\SignatureCryptoInterface;
+use MinVWS\Crypto\Laravel\TempFileInterface;
 use Symfony\Component\Process\Process;
 
 class ProcessSpawnService implements SignatureCryptoInterface
 {
-    /** @var string */
-    protected $certPath;
-    /** @var string */
-    protected $privKeyPath;
-    /** @var string */
-    protected $privKeyPass;
-    /** @var string */
-    protected $certChainPath;
+    protected string $certPath;
+    protected string $privKeyPath;
+    protected string $privKeyPass;
+    protected string $certChainPath;
+    protected TempFileInterface $tempFileService;
 
     /**
      * ProcessSpawnService constructor.
      *
-     * @param string $certPath
-     * @param string $privKeyPath
-     * @param string $privKeyPass
-     * @param string $certChainPath
+     * @param string|null $certPath
+     * @param string|null $privKeyPath
+     * @param string|null $privKeyPass
+     * @param string|null $certChainPath
      */
-    public function __construct(string $certPath, string $privKeyPath, string $privKeyPass, string $certChainPath)
-    {
-        $this->certPath = $certPath;
-        $this->privKeyPath = $privKeyPath;
-        $this->privKeyPass = $privKeyPass;
-        $this->certChainPath = $certChainPath;
-
-        if (!is_readable($privKeyPath)) {
-            throw CryptoException::cannotReadFile($privKeyPass);
-        }
+    public function __construct(
+        ?string $certPath = null,
+        ?string $privKeyPath = null,
+        ?string $privKeyPass = null,
+        ?string $certChainPath = null,
+        ?TempFileInterface $tempFileService,
+    ) {
+        $this->certPath = $certPath ?? '';
+        $this->privKeyPath = $privKeyPath ?? '';
+        $this->privKeyPass = $privKeyPass ?? '';
+        $this->certChainPath = $certChainPath ?? '';
+        $this->tempFileService = $tempFileService ?? app(TempFileInterface::class);
     }
 
     /**
@@ -44,16 +44,26 @@ class ProcessSpawnService implements SignatureCryptoInterface
      */
     public function sign(string $payload, bool $detached = false): string
     {
+        if (!is_readable($this->certPath)) {
+            throw CryptoException::cannotReadFile($this->certPath);
+        }
+        if (!is_readable($this->privKeyPath)) {
+            throw CryptoException::cannotReadFile($this->privKeyPath);
+        }
+        if (!empty($this->certChainPath) && !is_readable($this->certChainPath)) {
+            throw CryptoException::cannotReadFile($this->certChainPath);
+        }
+
         $args = [
             'openssl', 'cms', '-sign', '-signer', $this->certPath, '-inkey', $this->privKeyPath, '-outform', 'DER'
         ];
         if (!$detached) {
             $args = array_merge($args, ['-nodetach']);
         }
-        if ($this->privKeyPass != "") {
+        if (!empty($this->privKeyPass)) {
             $args = array_merge($args, ['-passin', $this->privKeyPass]);
         }
-        if ($this->certChainPath != "") {
+        if (!empty($this->certChainPath)) {
             $args = array_merge($args, ['-CAfile', $this->certChainPath]);
         }
 
@@ -62,7 +72,7 @@ class ProcessSpawnService implements SignatureCryptoInterface
         $process->run();
 
         $errOutput = $process->getErrorOutput();
-        if ($errOutput != "") {
+        if (!empty($errOutput)) {
             throw CryptoException::sign($errOutput);
         }
 
@@ -73,37 +83,45 @@ class ProcessSpawnService implements SignatureCryptoInterface
      * @param string $signedPayload
      * @param string|null $content
      * @param string|null $certificate
+     * @param SignatureVerifyConfig|null $verifyConfig
      * @return bool
      */
-    public function verify(string $signedPayload, string $content = null, string $certificate = null): bool
-    {
+    public function verify(
+        string $signedPayload,
+        string $content = null,
+        string $certificate = null,
+        ?SignatureVerifyConfig $verifyConfig = null
+    ): bool {
         $tmpFile = null;
         $certTmpFile = null;
 
         try {
-            $args = ['openssl', 'cms', '-verify', '-inform', 'DER', '-noout', '-purpose', 'any'];
-            if ($this->certChainPath != "") {
+            $args = array_merge([
+                'openssl', 'cms', '-verify',
+                '-inform', 'DER',
+                '-noout',
+                '-purpose', 'any',
+            ], $this->getOpenSslTags($verifyConfig));
+
+            if (!empty($this->certChainPath)) {
                 $args = array_merge($args, ['-CAfile', $this->certChainPath]);
             }
 
             if ($content !== null) {
-                $tmpFile = tmpfile();
-                if (!is_resource($tmpFile)) {
-                    throw CryptoException::verify("cannot create temp file on disk");
-                }
-                $tmpFilePath = stream_get_meta_data($tmpFile)['uri'];
-                file_put_contents($tmpFilePath, $content);
-                $args = array_merge($args, ['-content', $tmpFilePath]);
+                $tmpFile = $this->tempFileService->createTempFileWithContent($content);
+                $args = array_merge($args, ['-content', $this->tempFileService->getTempFilePath($tmpFile)]);
             }
 
             if ($certificate !== null) {
-                $certTmpFile = tmpfile();
-                if (!is_resource($certTmpFile)) {
-                    throw CryptoException::verify("cannot create temp file on disk");
-                }
-                $certTmpFilePath = stream_get_meta_data($certTmpFile)['uri'];
-                file_put_contents($certTmpFilePath, $certificate);
-                $args = array_merge($args, ['-certfile', $certTmpFilePath, '-nointern']);
+                $certTmpFile = $this->tempFileService->createTempFileWithContent($certificate);
+                $args = array_merge(
+                    $args,
+                    [
+                        '-certfile',
+                        $this->tempFileService->getTempFilePath($certTmpFile),
+                        '-nointern',
+                    ],
+                );
             }
 
             $process = new Process($args);
@@ -114,21 +132,27 @@ class ProcessSpawnService implements SignatureCryptoInterface
 
             // Successful and failure are expected.
             if (
-                $errOutput != ""
+                !empty($errOutput)
                 && !str_starts_with($errOutput, "Verification successful")
                 && !str_starts_with($errOutput, "Verification failure")
             ) {
                 throw CryptoException::verify($errOutput);
             }
 
-            return $process->getExitCode() == 0;
+            return $process->getExitCode() === 0;
         } finally {
-            if ($tmpFile) {
-                fclose($tmpFile);
-            }
-            if ($certTmpFile) {
-                fclose($certTmpFile);
-            }
+            $this->tempFileService->closeTempFile($tmpFile);
+            $this->tempFileService->closeTempFile($certTmpFile);
         }
+    }
+
+    protected function getOpenSslTags(?SignatureVerifyConfig $config): array
+    {
+        $flags = [];
+        if ($config?->getBinary()) {
+            $flags[] = '-binary';
+        }
+
+        return $flags;
     }
 }

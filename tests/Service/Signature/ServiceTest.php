@@ -1,28 +1,23 @@
 <?php
 
-namespace MinVWS\Crypto\Tests\Service\Signature;
+namespace MinVWS\Crypto\Laravel\Tests\Service\Signature;
 
 use MinVWS\Crypto\Laravel\Service\Signature\NativeService;
 use MinVWS\Crypto\Laravel\Service\Signature\ProcessSpawnService;
+use MinVWS\Crypto\Laravel\Service\TempFileService;
 use MinVWS\Crypto\Laravel\SignatureCryptoInterface;
+use MinVWS\Crypto\Laravel\TempFileInterface;
 use PHPUnit\Framework\TestCase;
 
 class ServiceTest extends TestCase
 {
     public function serviceTypeProvider(): array
     {
-        if (PHP_VERSION_ID >= 80000) {
-            return array(
-                array('native', 'native'),
-                array('spawn', 'spawn'),
-                array('spawn', 'native'),
-                array('native', 'spawn'),
-            );
-        }
-
-        // php7 only uses spawn
         return array(
+            array('native', 'native'),
             array('spawn', 'spawn'),
+            array('spawn', 'native'),
+            array('native', 'spawn'),
         );
     }
 
@@ -72,9 +67,10 @@ class ServiceTest extends TestCase
             './tests/mockdata/cert-001.key',
             '',
             './tests/mockdata/cert-001.chain',
+            new TempFileService()
         ];
 
-        if ($serviceType == 'native') {
+        if ($serviceType === 'native') {
             return new NativeService(...$args);
         }
 

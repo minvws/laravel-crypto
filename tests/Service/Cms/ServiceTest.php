@@ -1,29 +1,23 @@
 <?php
 
-namespace MinVWS\Crypto\Tests\Service\Cms;
+namespace MinVWS\Crypto\Laravel\Tests\Service\Cms;
 
-use MinVWS\Crypto\Laravel\CryptoException;
+use MinVWS\Crypto\Laravel\Exceptions\CryptoException;
 use MinVWS\Crypto\Laravel\Service\Cms\NativeService;
 use MinVWS\Crypto\Laravel\Service\Cms\ProcessSpawnService;
 use MinVWS\Crypto\Laravel\CmsCryptoInterface;
+use MinVWS\Crypto\Laravel\Service\TempFileService;
 use PHPUnit\Framework\TestCase;
 
 class ServiceTest extends TestCase
 {
     public function serviceTypeProvider(): array
     {
-        if (PHP_VERSION_ID >= 80000) {
-            return array(
-                array('native', 'native'),
-                array('spawn', 'spawn'),
-                array('spawn', 'native'),
-                array('native', 'spawn'),
-            );
-        }
-
-        // php7 only uses spawn
         return array(
+            array('native', 'native'),
             array('spawn', 'spawn'),
+            array('spawn', 'native'),
+            array('native', 'spawn'),
         );
     }
 
@@ -94,6 +88,7 @@ class ServiceTest extends TestCase
             $encryptCerts,
             $decryptCert ?? $this->certPath('cert-002.cert'),
             $decryptCertkey ?? $this->certPath('cert-002.key'),
+            new TempFileService()
         ];
 
         if ($serviceType == 'native') {
