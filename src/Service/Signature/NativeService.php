@@ -11,7 +11,7 @@ class NativeService implements SignatureCryptoInterface
     protected string $certPath;
     protected string $privKeyPath;
     protected string $privKeyPass;
-    protected string $certChainPath;
+    protected ?string $certChainPath;
     protected TempFileInterface $tempFileService;
 
     /**
@@ -27,12 +27,12 @@ class NativeService implements SignatureCryptoInterface
         ?string $privKeyPath = null,
         ?string $privKeyPass = null,
         ?string $certChainPath = null,
-        ?TempFileInterface $tempFileService,
+        ?TempFileInterface $tempFileService = null,
     ) {
         $this->certPath = $certPath ?? '';
         $this->privKeyPath = $privKeyPath ?? '';
         $this->privKeyPass = $privKeyPass ?? '';
-        $this->certChainPath = $certChainPath ?? '';
+        $this->certChainPath = !empty($certChainPath) ? $certChainPath : null;
         $this->tempFileService = $tempFileService ?? app(TempFileInterface::class);
     }
 
@@ -147,7 +147,7 @@ class NativeService implements SignatureCryptoInterface
                 input_filename: ($detached ? $tmpFileContentDataPath : $tmpFileSignedDataPath) ?? '',
                 flags: $flags,
                 certificates: null,
-                ca_info: array($this->certChainPath),
+                ca_info: !empty($this->certChainPath) ? array($this->certChainPath) : [],
                 untrusted_certificates_filename: $tmpFileCertificateDataPath,
                 content: null,
                 pk7: null,
