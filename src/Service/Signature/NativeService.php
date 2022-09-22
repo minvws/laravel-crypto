@@ -78,7 +78,7 @@ class NativeService implements SignatureCryptoInterface
                 headers: $headers,
                 flags: $flags,
                 encoding: OPENSSL_ENCODING_DER,
-                untrusted_certificates_filename: $this->certChainPath // TODO: Check this in signature ...
+                untrusted_certificates_filename: $this->certChainPath
             );
 
             // Grab signature contents

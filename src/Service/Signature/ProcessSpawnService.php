@@ -101,7 +101,6 @@ class ProcessSpawnService implements SignatureCryptoInterface
                 'openssl', 'cms', '-verify',
                 '-inform', 'DER',
                 '-noout',
-                // '-purpose', 'any', // TODO: Make purpose optional and add test for purpose
             ], $this->getOpenSslTags($verifyConfig));
 
             if (!empty($this->certChainPath)) {
@@ -154,7 +153,14 @@ class ProcessSpawnService implements SignatureCryptoInterface
             $flags[] = '-binary';
         }
         if ($config?->getNoVerify()) {
-            $flags[] = '-noverify';
+            // When we supply a cert chain, then we want to check the ca certificate
+            // Else we want to ignore the certificate purpose
+            if (!$this->certChainPath) {
+                $flags[] = '-noverify';
+            }
+
+            $flags[] = '-purpose';
+            $flags[] = 'any';
         }
 
         return $flags;
