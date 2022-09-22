@@ -7,10 +7,9 @@ use MinVWS\Crypto\Laravel\Service\Signature\ProcessSpawnService;
 use MinVWS\Crypto\Laravel\Service\Signature\SignatureVerifyConfig;
 use MinVWS\Crypto\Laravel\Service\TempFileService;
 use MinVWS\Crypto\Laravel\SignatureCryptoInterface;
-use MinVWS\Crypto\Laravel\TempFileInterface;
 use PHPUnit\Framework\TestCase;
 
-class ServiceTest extends TestCase
+class NoAttrTest extends TestCase
 {
     public function serviceTypeProvider(): array
     {
@@ -27,21 +26,21 @@ class ServiceTest extends TestCase
      */
     public function testCorrectNotdetached(string $serviceType, string $serviceTypeOther): void
     {
-        $service = $this->getService($serviceType);
-        $serviceOther = $this->getService($serviceTypeOther);
+        $service = $this->getServiceWithNoAttrCertificate($serviceType);
+        $serviceOther = $this->getServiceWithNoAttrCertificate($serviceTypeOther);
 
         $signedData = $service->sign('foobar');
-        $this->assertTrue($serviceOther->verify($signedData));
+        $this->assertFalse($serviceOther->verify($signedData));
         $this->assertTrue(
             $serviceOther->verify(
                 $signedData,
                 null,
-                file_get_contents('./tests/mockdata/cert-001.cert'),
+                file_get_contents('./tests/mockdata/noattr.example.org.cert.pem'),
                 (new SignatureVerifyConfig())->setNoVerify(true),
             )
         );
-        $this->assertTrue(
-            $serviceOther->verify($signedData, null, file_get_contents('./tests/mockdata/cert-001.cert'))
+        $this->assertFalse(
+            $serviceOther->verify($signedData, null, file_get_contents('./tests/mockdata/noattr.example.org.cert.pem'))
         );
         $this->assertFalse(
             $serviceOther->verify($signedData, null, file_get_contents('./tests/mockdata/cert-002.cert'))
@@ -61,11 +60,11 @@ class ServiceTest extends TestCase
      */
     public function testCorrectDetached(string $serviceType, string $serviceTypeOther): void
     {
-        $service = $this->getService($serviceType);
-        $serviceOther = $this->getService($serviceTypeOther);
+        $service = $this->getServiceWithNoAttrCertificate($serviceType);
+        $serviceOther = $this->getServiceWithNoAttrCertificate($serviceTypeOther);
 
         $signedData = $service->sign('foobar', true);
-        $this->assertTrue($serviceOther->verify($signedData, 'foobar'));
+        $this->assertFalse($serviceOther->verify($signedData, 'foobar'));
         $this->assertFalse($serviceOther->verify($signedData, 'not-foobar'));
         $this->assertFalse($serviceOther->verify($signedData));
         $this->assertTrue(
@@ -75,14 +74,18 @@ class ServiceTest extends TestCase
             $serviceOther->verify($signedData, 'not-foobar', null, (new SignatureVerifyConfig())->setNoVerify(true))
         );
 
-        $this->assertTrue(
-            $serviceOther->verify($signedData, 'foobar', file_get_contents('./tests/mockdata/cert-001.cert'))
+        $this->assertFalse(
+            $serviceOther->verify(
+                $signedData,
+                'foobar',
+                file_get_contents('./tests/mockdata/noattr.example.org.cert.pem')
+            )
         );
         $this->assertTrue(
             $serviceOther->verify(
                 $signedData,
                 'foobar',
-                file_get_contents('./tests/mockdata/cert-001.cert'),
+                file_get_contents('./tests/mockdata/noattr.example.org.cert.pem'),
                 (new SignatureVerifyConfig())->setNoVerify(true)
             )
         );
@@ -104,8 +107,8 @@ class ServiceTest extends TestCase
      */
     public function testCorrectDetachedWithoutChain(string $serviceType, string $serviceTypeOther): void
     {
-        $service = $this->getService($serviceType);
-        $serviceOther = $this->getServiceWithoutChain($serviceTypeOther);
+        $service = $this->getServiceWithNoAttrCertificate($serviceType, false);
+        $serviceOther = $this->getServiceWithNoAttrCertificate($serviceTypeOther, false);
 
         $signedData = $service->sign('foobar', true);
         $this->assertFalse($serviceOther->verify($signedData, 'foobar'));
@@ -132,15 +135,23 @@ class ServiceTest extends TestCase
             $serviceOther->verify(
                 $signedData,
                 'foobar',
-                file_get_contents('./tests/mockdata/cert-001.cert'),
+                file_get_contents('./tests/mockdata/noattr.example.org.cert.pem'),
                 (new SignatureVerifyConfig())->setNoVerify(true),
             )
         );
         $this->assertFalse(
-            $serviceOther->verify($signedData, 'foobar', file_get_contents('./tests/mockdata/cert-001.cert'))
+            $serviceOther->verify(
+                $signedData,
+                'foobar',
+                file_get_contents('./tests/mockdata/noattr.example.org.cert.pem')
+            )
         );
         $this->assertFalse(
-            $serviceOther->verify($signedData, 'foobar', file_get_contents('./tests/mockdata/cert-002.cert'))
+            $serviceOther->verify(
+                $signedData,
+                'foobar',
+                file_get_contents('./tests/mockdata/cert-002.cert')
+            )
         );
         $this->assertFalse(
             $serviceOther->verify(
@@ -152,30 +163,15 @@ class ServiceTest extends TestCase
         );
     }
 
-    private function getService(string $serviceType): SignatureCryptoInterface
-    {
+    private function getServiceWithNoAttrCertificate(
+        string $serviceType,
+        bool $withChain = true,
+    ): SignatureCryptoInterface {
         $args = [
-            './tests/mockdata/cert-001.cert',
-            './tests/mockdata/cert-001.key',
+            './tests/mockdata/noattr.example.org.cert.pem',
+            './tests/mockdata/noattr.example.org.key.pem',
             '',
-            './tests/mockdata/cert-001.chain',
-            new TempFileService()
-        ];
-
-        if ($serviceType === 'native') {
-            return new NativeService(...$args);
-        }
-
-        return new ProcessSpawnService(...$args);
-    }
-
-    private function getServiceWithoutChain(string $serviceType): SignatureCryptoInterface
-    {
-        $args = [
-            './tests/mockdata/cert-001.cert',
-            './tests/mockdata/cert-001.key',
-            '',
-            '',
+            $withChain ? './tests/mockdata/example.org.chain.pem' : null,
             new TempFileService()
         ];
 

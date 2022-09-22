@@ -22,13 +22,14 @@ class ProcessSpawnService implements SignatureCryptoInterface
      * @param string|null $privKeyPath
      * @param string|null $privKeyPass
      * @param string|null $certChainPath
+     * @param TempFileInterface|null $tempFileService
      */
     public function __construct(
         ?string $certPath = null,
         ?string $privKeyPath = null,
         ?string $privKeyPass = null,
         ?string $certChainPath = null,
-        ?TempFileInterface $tempFileService,
+        ?TempFileInterface $tempFileService = null,
     ) {
         $this->certPath = $certPath ?? '';
         $this->privKeyPath = $privKeyPath ?? '';
@@ -100,7 +101,7 @@ class ProcessSpawnService implements SignatureCryptoInterface
                 'openssl', 'cms', '-verify',
                 '-inform', 'DER',
                 '-noout',
-                '-purpose', 'any',
+                // '-purpose', 'any', // TODO: Make purpose optional and add test for purpose
             ], $this->getOpenSslTags($verifyConfig));
 
             if (!empty($this->certChainPath)) {
@@ -151,6 +152,9 @@ class ProcessSpawnService implements SignatureCryptoInterface
         $flags = [];
         if ($config?->getBinary()) {
             $flags[] = '-binary';
+        }
+        if ($config?->getNoVerify()) {
+            $flags[] = '-noverify';
         }
 
         return $flags;
