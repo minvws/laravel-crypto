@@ -55,6 +55,14 @@ class CryptoServiceProvider extends ServiceProvider
 
             return new Signature\ProcessSpawnService(...$args);
         });
+
+        $this->app->singleton(SignatureVerifyCryptoInterface::class, function () {
+            if (function_exists('openssl_cms_verify')) {
+                return new Signature\NativeService(tempFileService: app(TempFileInterface::class));
+            } else {
+                return new Signature\ProcessSpawnService(tempFileService: app(TempFileInterface::class));
+            }
+        });
     }
 
     public function boot(): void
