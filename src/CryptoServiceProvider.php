@@ -17,7 +17,7 @@ class CryptoServiceProvider extends ServiceProvider
         $this->app->bind(TempFileInterface::class, TempFileService::class);
 
         $this->app->singleton(CmsCryptoInterface::class, function () {
-            if (function_exists('openssl_cms_encrypt')) {
+            if (function_exists('openssl_cms_encrypt') && !config('crypto.force_process_spawn', false)) {
                 return new Cms\NativeService(
                     config('crypto.cms.encryption_certificate_paths', []),
                     config('crypto.cms.decryption_certificate_path'),
@@ -49,7 +49,7 @@ class CryptoServiceProvider extends ServiceProvider
                 app(TempFileInterface::class),
             ];
 
-            if (function_exists('openssl_cms_sign')) {
+            if (function_exists('openssl_cms_sign') && !config('crypto.force_process_spawn', false)) {
                 return new Signature\NativeService(...$args);
             }
 
@@ -57,7 +57,7 @@ class CryptoServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(SignatureVerifyCryptoInterface::class, function () {
-            if (function_exists('openssl_cms_verify')) {
+            if (function_exists('openssl_cms_verify') && !config('crypto.force_process_spawn', false)) {
                 return new Signature\NativeService(tempFileService: app(TempFileInterface::class));
             } else {
                 return new Signature\ProcessSpawnService(tempFileService: app(TempFileInterface::class));
