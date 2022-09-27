@@ -3,8 +3,8 @@
 To learn more about the crypto used in the projects, please take a look at our [crypto doc](CRYPTO-README.md).
 
 ## Requirements
-- PHP >= 7.3
-- Laravel >= 6.20
+- PHP >= 8.0
+- Laravel >= 8.0
 
 ## Installation
 1. Install the package via composer:
@@ -34,8 +34,7 @@ Usage:
 ```php
 class UserController {
     
-    // @var CmsCryptoInterface
-    protected $service;
+    protected CmsCryptoInterface $service;
     
     function index()
     {
@@ -50,8 +49,7 @@ class UserController {
 ```php
 class UserController {
     
-    // @var SealboxCryptoInterface
-    protected $service;
+    protected SealboxCryptoInterface $service;
     
     function index()
     {
@@ -66,8 +64,7 @@ class UserController {
 ```php
 class UserController {
     
-    // @var SignatureCryptoInterface
-    protected $service;
+    protected SignatureCryptoInterface $service;
     
     function index()
     {
