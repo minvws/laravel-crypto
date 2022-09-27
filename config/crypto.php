@@ -1,6 +1,8 @@
 <?php
 
 return [
+    // Allows to use openssl binary instead of the native openssl_* functions
+    'force_process_spawn' => false,
 
     'cms' => [
         // A list of certificates that is used to encrypt data. Can be decrypted by any of the certificates privkeys.
