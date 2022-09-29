@@ -9,7 +9,7 @@ use MinVWS\Crypto\Laravel\Service\TempFileService;
 
 class Factory
 {
-    static function createCmsCryptoService(
+    public static function createCmsCryptoService(
         array $encryptionCertPaths = [],
         ?string $decryptionCertPath = null,
         ?string $decryptionKeyPath = null,
@@ -33,14 +33,14 @@ class Factory
         );
     }
 
-    static function createSealboxCryptoService(
+    public static function createSealboxCryptoService(
         ?string $privKey = null,
         ?string $recipientPubKey = null
     ): SealboxCryptoInterface {
         return new SealboxService($privKey, $recipientPubKey);
     }
 
-    static function createSignatureCryptoService(
+    public static function createSignatureCryptoService(
         ?string $certificatePath = null,
         ?string $certificateKeyPath = null,
         ?string $certificateKeyPass = null,

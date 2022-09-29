@@ -16,8 +16,8 @@ class ProcessSpawnService implements CmsCryptoInterface
     protected array $encryptionCertsPath;
 
     /**
-     * @var string|null Path to single certificate used for decrypting the data. The data could be encrypted for multiple
-     * certs, but this software only will use this cert to (try to) decode.
+     * @var string|null Path to single certificate used for decrypting the data. The data could be encrypted for
+     * multiple certs, but this software only will use this cert to (try to) decode.
      */
     protected ?string $decryptionCertPath;
 
