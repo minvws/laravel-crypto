@@ -2,9 +2,6 @@
 
 namespace MinVWS\Crypto\Laravel;
 
-use MinVWS\Crypto\Laravel\Service\Sealbox;
-use MinVWS\Crypto\Laravel\Service\Cms;
-use MinVWS\Crypto\Laravel\Service\Signature;
 use Illuminate\Support\ServiceProvider;
 use MinVWS\Crypto\Laravel\Service\TempFileService;
 
@@ -17,51 +14,29 @@ class CryptoServiceProvider extends ServiceProvider
         $this->app->bind(TempFileInterface::class, TempFileService::class);
 
         $this->app->singleton(CmsCryptoInterface::class, function () {
-            if (function_exists('openssl_cms_encrypt') && !config('crypto.force_process_spawn', false)) {
-                return new Cms\NativeService(
-                    config('crypto.cms.encryption_certificate_paths', []),
-                    config('crypto.cms.decryption_certificate_path'),
-                    config('crypto.cms.decryption_certificate_key_path'),
-                    app(TempFileInterface::class),
-                );
-            }
-
-            return new Cms\ProcessSpawnService(
-                config('crypto.cms.encryption_certificate_paths', []),
-                config('crypto.cms.decryption_certificate_path'),
-                config('crypto.cms.decryption_certificate_key_path'),
+            Factory::createCmsCryptoService(
+                encryptionCertPaths: config('crypto.cms.encryption_certificate_paths'),
+                decryptionCertPath: config('crypto.cms.decryption_certificate_path'),
+                decryptionKeyPath: config('crypto.cms.decryption_certificate_key_path'),
+                forceProcessSpawn: config('crypto.force_process_spawn', false),
             );
         });
 
         $this->app->singleton(SealboxCryptoInterface::class, function () {
-            return new Sealbox\SealboxService(
-                config('crypto.sealbox.private_key'),
-                config('crypto.sealbox.recipient_public_key')
+            Factory::createSealboxCryptoService(
+                privKey: config('crypto.sealbox.private_key'),
+                recipientPubKey: config('crypto.sealbox.recipient_pub_key'),
             );
         });
 
         $this->app->singleton(SignatureCryptoInterface::class, function () {
-            $args = [
-                config('crypto.signature.x509_cert'),
-                config('crypto.signature.x509_key'),
-                config('crypto.signature.x509_pass', ''),
-                config('crypto.signature.x509_chain', ''),
-                app(TempFileInterface::class),
-            ];
-
-            if (function_exists('openssl_cms_sign') && !config('crypto.force_process_spawn', false)) {
-                return new Signature\NativeService(...$args);
-            }
-
-            return new Signature\ProcessSpawnService(...$args);
-        });
-
-        $this->app->singleton(SignatureVerifyCryptoInterface::class, function () {
-            if (function_exists('openssl_cms_verify') && !config('crypto.force_process_spawn', false)) {
-                return new Signature\NativeService(tempFileService: app(TempFileInterface::class));
-            } else {
-                return new Signature\ProcessSpawnService(tempFileService: app(TempFileInterface::class));
-            }
+            Factory::createSignatureCryptoService(
+                certificatePath: config('crypto.signature.x509_cert'),
+                certificateKeyPath: config('crypto.signature.x509_key'),
+                certificateKeyPass: config('crypto.signature.x509_pass'),
+                certificateChain: config('crypto.signature.x509_chain'),
+                forceProcessSpawn: config('crypto.force_process_spawn', false),
+            );
         });
     }
 

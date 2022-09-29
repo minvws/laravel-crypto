@@ -8,30 +8,21 @@ use MinVWS\Crypto\Laravel\SealboxCryptoInterface;
 
 class SealboxService implements SealboxCryptoInterface
 {
-    /** @var string */
-    protected $recipientPubKey;
+    protected ?string $recipientPubKey;     // Public key to encrypt with
+    protected ?string $privKey;             // Private key to decrypt with
 
-    /** @var string */
-    protected $privKey;
-
-    /**
-     * SealboxService constructor.
-     *
-     * @param string $privKey
-     * @param string $recipientPubKey
-     */
-    public function __construct(string $privKey, string $recipientPubKey)
+    public function __construct(?string $privKey, ?string $recipientPubKey)
     {
-        $this->privKey = base64_decode($privKey);
-        $this->recipientPubKey = base64_decode($recipientPubKey);
+        $this->privKey = $privKey ? base64_decode($privKey) : null;
+        $this->recipientPubKey = $recipientPubKey ? base64_decode($recipientPubKey) : null;
     }
 
-    /**
-     * @param string $plainText
-     * @return string
-     */
     public function encrypt(string $plainText): string
     {
+        if (! $this->recipientPubKey) {
+            throw CryptoException::encrypt("no recipient public key provided");
+        }
+
         try {
             $ciphertext = sodium_crypto_box_seal($plainText, $this->recipientPubKey);
         } catch (Exception $e) {
@@ -41,16 +32,19 @@ class SealboxService implements SealboxCryptoInterface
         return $ciphertext;
     }
 
-    /**
-     * @param string $cipherText
-     * @return string
-     */
     public function decrypt(string $cipherText): string
     {
+        if (! $this->recipientPubKey) {
+            CryptoException::encrypt("no recipient public key provided");
+        }
+        if (! $this->privKey) {
+            CryptoException::encrypt("no private key provided");
+        }
+
         try {
             $keyPair = sodium_crypto_box_keypair_from_secretkey_and_publickey(
-                $this->privKey,
-                $this->recipientPubKey
+                $this->privKey ?? "",
+                $this->recipientPubKey ?? ""
             );
 
             $plaintext = sodium_crypto_box_seal_open($cipherText, $keyPair);

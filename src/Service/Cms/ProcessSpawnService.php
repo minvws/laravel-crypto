@@ -4,6 +4,8 @@ namespace MinVWS\Crypto\Laravel\Service\Cms;
 
 use MinVWS\Crypto\Laravel\CmsCryptoInterface;
 use MinVWS\Crypto\Laravel\Exceptions\CryptoException;
+use MinVWS\Crypto\Laravel\Service\TempFileService;
+use MinVWS\Crypto\Laravel\TempFileInterface;
 use Symfony\Component\Process\Process;
 
 class ProcessSpawnService implements CmsCryptoInterface
@@ -11,24 +13,22 @@ class ProcessSpawnService implements CmsCryptoInterface
     /**
      * @var string[] Paths to certificates that are used to encrypt the data. The privkey of any of these certs can
      * decrypt the data. Useful when you want to decrypt the same data at multiple places. */
-    protected $encryptionCertsPath;
+    protected array $encryptionCertsPath;
 
     /**
-     * @var string Path to single certificate used for decrypting the data. The data could be encrypted for multiple
+     * @var string|null Path to single certificate used for decrypting the data. The data could be encrypted for multiple
      * certs, but this software only will use this cert to (try to) decode.
      */
-    protected $decryptionCertPath;
+    protected ?string $decryptionCertPath;
 
-    /** @var string The path to the private key of $decryptionCert cert. Needed to decrypt the actual data. */
-    protected $decryptionCertKeyPath;
+    /** @var string|null The path to the private key of $decryptionCert cert. Needed to decrypt the actual data. */
+    protected ?string $decryptionCertKeyPath;
 
-    /**
-     * @param array $encryptionCertsPath
-     * @param string $decryptionCertPath
-     * @param string $decryptionCertKeyPath
-     */
-    public function __construct(array $encryptionCertsPath, string $decryptionCertPath, string $decryptionCertKeyPath)
-    {
+    public function __construct(
+        array $encryptionCertsPath = [],
+        ?string $decryptionCertPath = null,
+        ?string $decryptionCertKeyPath = null,
+    ) {
         $this->encryptionCertsPath = $encryptionCertsPath;
         $this->decryptionCertPath = $decryptionCertPath;
         $this->decryptionCertKeyPath = $decryptionCertKeyPath;
@@ -41,6 +41,10 @@ class ProcessSpawnService implements CmsCryptoInterface
      */
     public function encrypt(string $plainText): string
     {
+        if (count($this->encryptionCertsPath) == 0) {
+            throw CryptoException::encrypt('cannot encrypt without providing at least one certificate');
+        }
+
         $args = array_merge(
             ['openssl', 'cms', '-stream', '-encrypt', '-aes-256-cbc', '-outform', 'PEM'],
             $this->encryptionCertsPath
@@ -63,6 +67,13 @@ class ProcessSpawnService implements CmsCryptoInterface
      */
     public function decrypt(string $cipherText): string
     {
+        if ($this->decryptionCertPath === null || $this->decryptionCertKeyPath === null) {
+            throw CryptoException::decrypt("no decryption certificate or key provided");
+        }
+
+        if (!is_readable($this->decryptionCertPath)) {
+            throw CryptoException::cannotReadFile($this->decryptionCertPath);
+        }
         if (!is_readable($this->decryptionCertKeyPath)) {
             throw CryptoException::cannotReadFile($this->decryptionCertKeyPath);
         }
