@@ -12,16 +12,16 @@ class CryptoExceptionTest extends TestCase
      */
     public function testExceptions(): void
     {
-        $this->assertEquals('Cannot decrypt data', CryptoException::decrypt()->getMessage());
-        $this->assertEquals('Cannot decrypt data: foobar', CryptoException::decrypt("foobar")->getMessage());
+        $this->assertEquals('cannot decrypt data', CryptoException::decrypt()->getMessage());
+        $this->assertEquals('cannot decrypt data: foobar', CryptoException::decrypt("foobar")->getMessage());
 
-        $this->assertEquals('Cannot encrypt data', CryptoException::encrypt()->getMessage());
-        $this->assertEquals('Cannot encrypt data: foobar', CryptoException::encrypt("foobar")->getMessage());
+        $this->assertEquals('cannot encrypt data', CryptoException::encrypt()->getMessage());
+        $this->assertEquals('cannot encrypt data: foobar', CryptoException::encrypt("foobar")->getMessage());
 
-        $this->assertEquals('Cannot sign data', CryptoException::sign()->getMessage());
-        $this->assertEquals('Cannot sign data: foobar', CryptoException::sign("foobar")->getMessage());
+        $this->assertEquals('cannot sign data', CryptoException::sign()->getMessage());
+        $this->assertEquals('cannot sign data: foobar', CryptoException::sign("foobar")->getMessage());
 
-        $this->assertEquals('Cannot verify data', CryptoException::verify()->getMessage());
-        $this->assertEquals('Cannot verify data: foobar', CryptoException::verify("foobar")->getMessage());
+        $this->assertEquals('cannot verify data', CryptoException::verify()->getMessage());
+        $this->assertEquals('cannot verify data: foobar', CryptoException::verify("foobar")->getMessage());
     }
 }

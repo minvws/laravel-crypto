@@ -25,11 +25,12 @@ class ProcessSpawnService implements SignatureCryptoInterface
      * @param TempFileInterface|null $tempFileService
      */
     public function __construct(
-        ?string $certPath = null,
-        ?string $privKeyPath = null,
-        ?string $privKeyPass = null,
-        ?string $certChainPath = null,
-        ?TempFileInterface $tempFileService = null,
+        ?string $certPath = null,                       // Certificate to sign with
+        ?string $privKeyPath = null,                    // Private key of the certificate
+        ?string $privKeyPass = null,                    // Optional pass phrase of the key
+        ?string $certChainPath = null,                  // Optional certificate chain that should be included
+        //   in the signature
+        ?TempFileInterface $tempFileService = null,     // Service to store temporary files
     ) {
         $this->certPath = $certPath ?? '';
         $this->privKeyPath = $privKeyPath ?? '';
@@ -81,16 +82,17 @@ class ProcessSpawnService implements SignatureCryptoInterface
     }
 
     /**
-     * @param string $signedPayload
-     * @param string|null $content
-     * @param string|null $certificate
-     * @param SignatureVerifyConfig|null $verifyConfig
+     * @param string $signedPayload                         The payload with signature
+     * @param string|null $content                          The actual content to verify against
+     * @param string|null $detachedCertificate              Additional certificate to verify against (in case you
+     *                                                        don't want to use the certificate in the signature itself)
+     * @param SignatureVerifyConfig|null $verifyConfig      Additional configuration for the verification
      * @return bool
      */
     public function verify(
         string $signedPayload,
         string $content = null,
-        string $certificate = null,
+        string $detachedCertificate = null,
         ?SignatureVerifyConfig $verifyConfig = null
     ): bool {
         $tmpFile = null;
@@ -112,8 +114,8 @@ class ProcessSpawnService implements SignatureCryptoInterface
                 $args = array_merge($args, ['-content', $this->tempFileService->getTempFilePath($tmpFile)]);
             }
 
-            if ($certificate !== null) {
-                $certTmpFile = $this->tempFileService->createTempFileWithContent($certificate);
+            if ($detachedCertificate !== null) {
+                $certTmpFile = $this->tempFileService->createTempFileWithContent($detachedCertificate);
                 $args = array_merge(
                     $args,
                     [
@@ -153,14 +155,15 @@ class ProcessSpawnService implements SignatureCryptoInterface
             $flags[] = '-binary';
         }
         if ($config?->getNoVerify()) {
-            // When we supply a cert chain, then we want to check the ca certificate
-            // Else we want to ignore the certificate purpose
-            if (!$this->certChainPath) {
+            // When we supply a cert chain, then we want to check the ca certificate chain as well by using
+            // the "-purpose any" option to openssl. If there is no cert chain, we can use the "-noverify" option to
+            // keep it compatible with the native PHP implementation that doesn't understand the "-purpose any" option.
+            if ($this->certChainPath) {
+                $flags[] = '-purpose';
+                $flags[] = 'any';
+            } else {
                 $flags[] = '-noverify';
             }
-
-            $flags[] = '-purpose';
-            $flags[] = 'any';
         }
 
         return $flags;
