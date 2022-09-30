@@ -9,7 +9,7 @@ use Symfony\Component\Process\Process;
 
 class ProcessSpawnService implements SignatureCryptoInterface
 {
-    protected string $certPath;
+    protected string $signingCertPath;
     protected string $privKeyPath;
     protected string $privKeyPass;
     protected string $certChainPath;
@@ -18,21 +18,21 @@ class ProcessSpawnService implements SignatureCryptoInterface
     /**
      * ProcessSpawnService constructor.
      *
-     * @param string|null $certPath
+     * @param string|null $signingCertPath
      * @param string|null $privKeyPath
      * @param string|null $privKeyPass
      * @param string|null $certChainPath
      * @param TempFileInterface|null $tempFileService
      */
     public function __construct(
-        ?string $certPath = null,                       // Certificate to sign with
+        ?string $signingCertPath = null,                // Certificate to sign with
         ?string $privKeyPath = null,                    // Private key of the certificate
         ?string $privKeyPass = null,                    // Optional pass phrase of the key
         ?string $certChainPath = null,                  // Optional certificate chain that should be included
         //   in the signature
         ?TempFileInterface $tempFileService = null,     // Service to store temporary files
     ) {
-        $this->certPath = $certPath ?? '';
+        $this->signingCertPath = $signingCertPath ?? '';
         $this->privKeyPath = $privKeyPath ?? '';
         $this->privKeyPass = $privKeyPass ?? '';
         $this->certChainPath = $certChainPath ?? '';
@@ -46,8 +46,8 @@ class ProcessSpawnService implements SignatureCryptoInterface
      */
     public function sign(string $payload, bool $detached = false): string
     {
-        if (!is_readable($this->certPath)) {
-            throw CryptoException::cannotReadFile($this->certPath);
+        if (!is_readable($this->signingCertPath)) {
+            throw CryptoException::cannotReadFile($this->signingCertPath);
         }
         if (!is_readable($this->privKeyPath)) {
             throw CryptoException::cannotReadFile($this->privKeyPath);
@@ -57,7 +57,10 @@ class ProcessSpawnService implements SignatureCryptoInterface
         }
 
         $args = [
-            'openssl', 'cms', '-sign', '-signer', $this->certPath, '-inkey', $this->privKeyPath, '-outform', 'DER'
+            'openssl', 'cms', '-sign',
+            '-signer', $this->signingCertPath,
+            '-inkey', $this->privKeyPath,
+            '-outform', 'DER'
         ];
         if (!$detached) {
             $args = array_merge($args, ['-nodetach']);

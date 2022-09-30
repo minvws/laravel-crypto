@@ -17,14 +17,15 @@ interface SignatureCryptoInterface
     /**
      * @param string $signedPayload The signed CMS block data (in DER format)
      * @param string|null $content Optional content to verify against. ONLY needed when you created a detached signature
-     * @param string|null $certificate Optional certificate to verify against.
+     * @param string|null $detachedCertificate Optional certificate to verify against when not using the default
+     *                                          certificate in the signature
      * @param SignatureVerifyConfig|null $verifyConfig Optional verify config.
      * @return bool True when the verification is successful. False otherwise.
      */
     public function verify(
         string $signedPayload,
         string $content = null,
-        string $certificate = null,
+        string $detachedCertificate = null,
         ?SignatureVerifyConfig $verifyConfig = null
     ): bool;
 }
