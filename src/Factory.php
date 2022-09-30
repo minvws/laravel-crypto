@@ -52,7 +52,7 @@ class Factory
             $certificateKeyPath,
             $certificateKeyPass,
             $certificateChain,
-            app(TempFileInterface::class),
+            new TempFileService(),
         ];
 
         if (function_exists('openssl_cms_sign') && !$forceProcessSpawn) {
