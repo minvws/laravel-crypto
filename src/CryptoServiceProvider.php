@@ -14,7 +14,7 @@ class CryptoServiceProvider extends ServiceProvider
         $this->app->bind(TempFileInterface::class, TempFileService::class);
 
         $this->app->singleton(CmsCryptoInterface::class, function () {
-            Factory::createCmsCryptoService(
+            return Factory::createCmsCryptoService(
                 encryptionCertPaths: config('crypto.cms.encryption_certificate_paths'),
                 decryptionCertPath: config('crypto.cms.decryption_certificate_path'),
                 decryptionKeyPath: config('crypto.cms.decryption_certificate_key_path'),
@@ -23,14 +23,14 @@ class CryptoServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(SealboxCryptoInterface::class, function () {
-            Factory::createSealboxCryptoService(
+            return Factory::createSealboxCryptoService(
                 privKey: config('crypto.sealbox.private_key'),
                 recipientPubKey: config('crypto.sealbox.recipient_pub_key'),
             );
         });
 
         $this->app->singleton(SignatureCryptoInterface::class, function () {
-            Factory::createSignatureCryptoService(
+            return Factory::createSignatureCryptoService(
                 certificatePath: config('crypto.signature.x509_cert'),
                 certificateKeyPath: config('crypto.signature.x509_key'),
                 certificateKeyPass: config('crypto.signature.x509_pass'),
