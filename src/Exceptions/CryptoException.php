@@ -48,4 +48,14 @@ class CryptoException extends \RuntimeException
 
         return new self(sprintf("error while reading keyfile %s: file is not readable by user (try chmod 644)", $path));
     }
+
+    public static function opensslVersion(): CryptoException
+    {
+        return new self('MacOS ships with an incompatible openssl (libreSSL) that does not support CMS encryption');
+    }
+
+    public static function opensslNotFound(): CryptoException
+    {
+        return new self('Cannot find openssl binary');
+    }
 }

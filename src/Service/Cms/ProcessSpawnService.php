@@ -55,6 +55,12 @@ class ProcessSpawnService implements CmsCryptoInterface
 
         $errOutput = $process->getErrorOutput();
         if (!empty($errOutput)) {
+            if ($process->getExitCode() == 1 && $this->isLibreSSL()) {
+                throw CryptoException::opensslVersion();
+            }
+            if ($process->getExitCode() == 127) {
+                throw CryptoException::opensslNotFound();
+            }
             throw CryptoException::encrypt($errOutput);
         }
 
@@ -88,9 +94,28 @@ class ProcessSpawnService implements CmsCryptoInterface
 
         $errOutput = $process->getErrorOutput();
         if (!empty($errOutput)) {
+            if ($process->getExitCode() == 1 && $this->isLibreSSL()) {
+                throw CryptoException::opensslVersion();
+            }
+            if ($process->getExitCode() == 127) {
+                throw CryptoException::opensslNotFound();
+            }
+
             throw CryptoException::decrypt($errOutput);
         }
 
         return $process->getOutput();
+    }
+
+    protected function isLibreSSL(): bool
+    {
+        $process = new Process(['openssl', 'version']);
+        $process->run();
+        if ($process->getExitCode() != 0) {
+            return false;    // assume ok
+        }
+
+        $processOutput = $process->getOutput();
+        return strpos($processOutput, 'LibreSSL') !== false;
     }
 }
