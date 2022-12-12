@@ -138,8 +138,10 @@ class ProcessSpawnService implements SignatureCryptoInterface
             // Successful and failure are expected.
             if (
                 !empty($errOutput)
-                && !str_contains($errOutput, "Verification successful")
-                && !str_contains($errOutput, "Verification failure")
+                && !str_starts_with($errOutput, "Verification successful")
+                && !str_starts_with($errOutput, "Verification failure")
+                && !str_starts_with($errOutput, "CMS Verification successful")
+                && !str_starts_with($errOutput, "CMS Verification failure")
             ) {
                 throw CryptoException::verify($errOutput);
             }
