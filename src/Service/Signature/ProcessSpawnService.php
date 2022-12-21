@@ -69,7 +69,7 @@ class ProcessSpawnService implements SignatureCryptoInterface
             $args = array_merge($args, ['-passin', $this->privKeyPass]);
         }
         if (!empty($this->certChainPath)) {
-            $args = array_merge($args, ['-CAfile', $this->certChainPath]);
+            $args = array_merge($args, ['-certfile', $this->certChainPath]);
         }
 
         $process = new Process($args);
