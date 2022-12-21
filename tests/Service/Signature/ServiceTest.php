@@ -9,6 +9,7 @@ use MinVWS\Crypto\Laravel\Service\TempFileService;
 use MinVWS\Crypto\Laravel\SignatureCryptoInterface;
 use MinVWS\Crypto\Laravel\TempFileInterface;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Process\Process;
 
 class ServiceTest extends TestCase
 {
@@ -19,6 +20,36 @@ class ServiceTest extends TestCase
             array('spawn', 'spawn'),
             array('spawn', 'native'),
             array('native', 'spawn'),
+        );
+    }
+
+    /**
+     * @dataProvider serviceTypeProvider
+     */
+    public function testSignatureContainsChain(string $serviceType, string $serviceTypeOther): void
+    {
+        $service = $this->getService($serviceType);
+        $serviceOther = $this->getService($serviceTypeOther);
+
+        $signedData = $service->sign('foobar', true);
+        $signedDataByOtherService = $serviceOther->sign('foobar', true);
+
+        $certificatesInSignature = $this->getCertificatesFromSignature($signedData);
+        $certificatesInSignatureOtherService = $this->getCertificatesFromSignature($signedDataByOtherService);
+
+        // Check if the created signature both contains same certificates
+        $this->assertEquals($certificatesInSignature, $certificatesInSignatureOtherService);
+
+        // Check if the created signature both contains the cert
+        $this->assertStringContainsString(
+            "subject=C = NL, ST = ZH, L = Den Haag, O = MinVWS, OU = RDO-TESTING, CN = server1.test",
+            $certificatesInSignature
+        );
+
+        // Check if the created signature both contains the chain
+        $this->assertStringContainsString(
+            "subject=C = NL, ST = ZH, L = Den Haag, O = MinVWS, OU = RDO-TESTING, CN = RDO-TESTING",
+            $certificatesInSignature
         );
     }
 
@@ -184,5 +215,16 @@ class ServiceTest extends TestCase
         }
 
         return new ProcessSpawnService(...$args);
+    }
+
+    private function getCertificatesFromSignature(string $signature): string
+    {
+        $process = new Process([
+            'openssl', 'pkcs7', '-inform', 'DER', '-print_certs'
+        ]);
+        $process->setInput(base64_decode($signature));
+        $process->run();
+
+        return $process->getOutput();
     }
 }
