@@ -25,7 +25,7 @@ class CryptoServiceProvider extends ServiceProvider
         $this->app->singleton(SealboxCryptoInterface::class, function () {
             return Factory::createSealboxCryptoService(
                 privKey: config('crypto.sealbox.private_key'),
-                recipientPubKey: config('crypto.sealbox.recipient_pub_key'),
+                recipientPubKey: config('crypto.sealbox.recipient_public_key'),
             );
         });
 
