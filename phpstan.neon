@@ -5,11 +5,11 @@ parameters:
         - src
     level: 8
     inferPrivatePropertyTypeFromConstructor: true
-    checkMissingIterableValueType: false
     bootstrapFiles:
         - openssl_constants.php
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:
+        - identifier: missingType.iterableValue
         - '#Function openssl_cms_sign not found.#'
         - '#Function openssl_cms_verify not found.#'
 
