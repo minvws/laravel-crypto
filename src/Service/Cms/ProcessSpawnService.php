@@ -85,7 +85,7 @@ class ProcessSpawnService implements CmsCryptoInterface
         }
 
         $args = [
-            'openssl', 'cms', '-decrypt', '-inform', 'PEM', 
+            'openssl', 'cms', '-decrypt', '-inform', 'PEM',
             '-inkey', $this->decryptionCertKeyPath,
             '-recip', $this->decryptionCertPath
         ];

@@ -31,7 +31,12 @@ class TempFileService implements TempFileInterface
             throw FileException::variableIsNotAResource();
         }
 
-        return stream_get_meta_data($resource)['uri'];
+        $metadata = stream_get_meta_data($resource);
+        if (!isset($metadata['uri'])) {
+            throw new FileException('Cannot get temporary file path from stream metadata');
+        }
+
+        return $metadata['uri'];
     }
 
     /**
