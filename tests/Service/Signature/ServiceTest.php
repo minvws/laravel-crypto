@@ -42,13 +42,13 @@ class ServiceTest extends TestCase
 
         // Check if the created signature both contains the cert
         $this->assertStringContainsString(
-            "subject=C=NL, ST=ZH, L=Den Haag, O=MinVWS, OU=RDO-TESTING, CN=server1.test",
+            "subject=C = NL, ST = ZH, L = Den Haag, O = MinVWS, OU = RDO-TESTING, CN = server1.test",
             $certificatesInSignature
         );
 
         // Check if the created signature both contains the chain
         $this->assertStringContainsString(
-            "subject=C=NL, ST=ZH, L=Den Haag, O=MinVWS, OU=RDO-TESTING, CN=RDO-TESTING",
+            "subject=C = NL, ST = ZH, L = Den Haag, O = MinVWS, OU = RDO-TESTING, CN = RDO-TESTING",
             $certificatesInSignature
         );
     }
