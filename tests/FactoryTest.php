@@ -15,7 +15,7 @@ class FactoryTest extends TestCase
     protected const TEST_PRIVKEY = '/BmJGKHzacb8/aZYl5d1dwjJd7kcv6SLxux7A8Ld5Hk=';
     protected const TEST_PUBKEY = 'iUDWI5RkuUVQQAaC4BoYFdZXP7Lod6RTL9orQeuRzxE=';
 
-    public function boolProvider()
+    public function boolProvider(): array
     {
         return array(
             array(true),

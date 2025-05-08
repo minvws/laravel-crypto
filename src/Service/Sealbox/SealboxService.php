@@ -35,10 +35,10 @@ class SealboxService implements SealboxCryptoInterface
     public function decrypt(string $cipherText): string
     {
         if (! $this->recipientPubKey) {
-            CryptoException::encrypt("no recipient public key provided");
+            throw CryptoException::encrypt("no recipient public key provided");
         }
         if (! $this->privKey) {
-            CryptoException::encrypt("no private key provided");
+            throw CryptoException::encrypt("no private key provided");
         }
 
         try {
