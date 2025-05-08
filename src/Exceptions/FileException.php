@@ -30,4 +30,12 @@ class FileException extends RuntimeException
     {
         return new self(sprintf("Error while reading %s: file is not readable by user (try chmod 644)", $path));
     }
+
+    /**
+     * @return FileException
+     */
+    public static function cannotGetTempFilePath(): FileException
+    {
+        return new self("cannot get the temp file path");
+    }
 }

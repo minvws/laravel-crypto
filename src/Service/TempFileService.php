@@ -33,7 +33,7 @@ class TempFileService implements TempFileInterface
 
         $metadata = stream_get_meta_data($resource);
         if (!isset($metadata['uri'])) {
-            throw new FileException('Cannot get temporary file path from stream metadata');
+            throw FileException::cannotGetTempFilePath();
         }
 
         return $metadata['uri'];
