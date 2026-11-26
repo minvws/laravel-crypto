@@ -144,7 +144,7 @@ class NativeService implements SignatureCryptoInterface
 
             // Verify it
             $res = openssl_cms_verify(
-                input_filename: ($detached ? $tmpFileContentDataPath : $tmpFileSignedDataPath) ?? '',
+                input_filename: $detached ? $tmpFileContentDataPath : $tmpFileSignedDataPath,
                 flags: $flags,
                 certificates: null,
                 ca_info: !empty($this->certChainPath) ? array($this->certChainPath) : [],

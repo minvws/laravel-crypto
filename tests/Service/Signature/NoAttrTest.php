@@ -7,11 +7,12 @@ use MinVWS\Crypto\Laravel\Service\Signature\ProcessSpawnService;
 use MinVWS\Crypto\Laravel\Service\Signature\SignatureVerifyConfig;
 use MinVWS\Crypto\Laravel\Service\TempFileService;
 use MinVWS\Crypto\Laravel\SignatureCryptoInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class NoAttrTest extends TestCase
 {
-    public function serviceTypeProvider(): array
+    public static function serviceTypeProvider(): array
     {
         return array(
             array('native', 'native'),
@@ -24,6 +25,7 @@ class NoAttrTest extends TestCase
     /**
      * @dataProvider serviceTypeProvider
      */
+    #[DataProvider('serviceTypeProvider')]
     public function testCorrectNotdetached(string $serviceType, string $serviceTypeOther): void
     {
         $service = $this->getServiceWithNoAttrCertificate($serviceType);
@@ -58,6 +60,7 @@ class NoAttrTest extends TestCase
     /**
      * @dataProvider serviceTypeProvider
      */
+    #[DataProvider('serviceTypeProvider')]
     public function testCorrectDetached(string $serviceType, string $serviceTypeOther): void
     {
         $service = $this->getServiceWithNoAttrCertificate($serviceType);
@@ -105,6 +108,7 @@ class NoAttrTest extends TestCase
     /**
      * @dataProvider serviceTypeProvider
      */
+    #[DataProvider('serviceTypeProvider')]
     public function testCorrectDetachedWithoutChain(string $serviceType, string $serviceTypeOther): void
     {
         $service = $this->getServiceWithNoAttrCertificate($serviceType, false);

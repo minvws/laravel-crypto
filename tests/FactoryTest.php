@@ -8,6 +8,7 @@ use MinVWS\Crypto\Laravel\Service\Cms\NativeService;
 use MinVWS\Crypto\Laravel\Service\Cms\ProcessSpawnService;
 use MinVWS\Crypto\Laravel\CmsCryptoInterface;
 use MinVWS\Crypto\Laravel\Service\TempFileService;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class FactoryTest extends TestCase
@@ -15,7 +16,7 @@ class FactoryTest extends TestCase
     protected const TEST_PRIVKEY = '/BmJGKHzacb8/aZYl5d1dwjJd7kcv6SLxux7A8Ld5Hk=';
     protected const TEST_PUBKEY = 'iUDWI5RkuUVQQAaC4BoYFdZXP7Lod6RTL9orQeuRzxE=';
 
-    public function boolProvider(): array
+    public static function boolProvider(): array
     {
         return array(
             array(true),
@@ -24,6 +25,7 @@ class FactoryTest extends TestCase
     }
 
     /** @dataProvider boolProvider */
+    #[DataProvider('boolProvider')]
     public function testFactoryCmsCrypto(bool $spawn): void
     {
         $service = Factory::createCmsCryptoService(
@@ -69,6 +71,7 @@ class FactoryTest extends TestCase
     }
 
     /** @dataProvider boolProvider */
+    #[DataProvider('boolProvider')]
     public function testCmsCryptoEncodeWitoutCerts(bool $spawn): void
     {
         $service = Factory::createCmsCryptoService(
@@ -83,6 +86,7 @@ class FactoryTest extends TestCase
     }
 
     /** @dataProvider boolProvider */
+    #[DataProvider('boolProvider')]
     public function testCmsCryptoDecodeWitoutCert(bool $spawn): void
     {
         $service = Factory::createCmsCryptoService(

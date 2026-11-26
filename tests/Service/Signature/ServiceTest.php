@@ -8,12 +8,13 @@ use MinVWS\Crypto\Laravel\Service\Signature\SignatureVerifyConfig;
 use MinVWS\Crypto\Laravel\Service\TempFileService;
 use MinVWS\Crypto\Laravel\SignatureCryptoInterface;
 use MinVWS\Crypto\Laravel\TempFileInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\Process;
 
 class ServiceTest extends TestCase
 {
-    public function serviceTypeProvider(): array
+    public static function serviceTypeProvider(): array
     {
         return array(
             array('native', 'native'),
@@ -26,6 +27,7 @@ class ServiceTest extends TestCase
     /**
      * @dataProvider serviceTypeProvider
      */
+    #[DataProvider('serviceTypeProvider')]
     public function testSignatureContainsChain(string $serviceType, string $serviceTypeOther): void
     {
         $service = $this->getService($serviceType);
@@ -42,13 +44,13 @@ class ServiceTest extends TestCase
 
         // Check if the created signature both contains the cert
         $this->assertStringContainsString(
-            "subject=C = NL, ST = ZH, L = Den Haag, O = MinVWS, OU = RDO-TESTING, CN = server1.test",
+            "subject=C=NL, ST=ZH, L=Den Haag, O=MinVWS, OU=RDO-TESTING, CN=server1.test",
             $certificatesInSignature
         );
 
         // Check if the created signature both contains the chain
         $this->assertStringContainsString(
-            "subject=C = NL, ST = ZH, L = Den Haag, O = MinVWS, OU = RDO-TESTING, CN = RDO-TESTING",
+            "subject=C=NL, ST=ZH, L=Den Haag, O=MinVWS, OU=RDO-TESTING, CN=RDO-TESTING",
             $certificatesInSignature
         );
     }
@@ -56,6 +58,7 @@ class ServiceTest extends TestCase
     /**
      * @dataProvider serviceTypeProvider
      */
+    #[DataProvider('serviceTypeProvider')]
     public function testCorrectNotdetached(string $serviceType, string $serviceTypeOther): void
     {
         $service = $this->getService($serviceType);
@@ -90,6 +93,7 @@ class ServiceTest extends TestCase
     /**
      * @dataProvider serviceTypeProvider
      */
+    #[DataProvider('serviceTypeProvider')]
     public function testCorrectDetached(string $serviceType, string $serviceTypeOther): void
     {
         $service = $this->getService($serviceType);
@@ -133,6 +137,7 @@ class ServiceTest extends TestCase
     /**
      * @dataProvider serviceTypeProvider
      */
+    #[DataProvider('serviceTypeProvider')]
     public function testCorrectDetachedWithoutChain(string $serviceType, string $serviceTypeOther): void
     {
         $service = $this->getService($serviceType);
@@ -225,6 +230,7 @@ class ServiceTest extends TestCase
         $process->setInput(base64_decode($signature));
         $process->run();
 
-        return $process->getOutput();
+        // OpenSSL 3.2 and later print "C=NL" where older versions print "C = NL".
+        return (string) preg_replace('/ = /', '=', $process->getOutput());
     }
 }
