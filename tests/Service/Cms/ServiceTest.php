@@ -7,11 +7,12 @@ use MinVWS\Crypto\Laravel\Service\Cms\NativeService;
 use MinVWS\Crypto\Laravel\Service\Cms\ProcessSpawnService;
 use MinVWS\Crypto\Laravel\CmsCryptoInterface;
 use MinVWS\Crypto\Laravel\Service\TempFileService;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class ServiceTest extends TestCase
 {
-    public function serviceTypeProvider(): array
+    public static function serviceTypeProvider(): array
     {
         return array(
             array('native', 'native'),
@@ -26,6 +27,7 @@ class ServiceTest extends TestCase
      * @param string $serviceType
      * @param string $serviceTypeOther
      */
+    #[DataProvider('serviceTypeProvider')]
     public function testCorrect(string $serviceType, string $serviceTypeOther): void
     {
         $service = $this->getService($serviceType, null, null);
@@ -40,6 +42,7 @@ class ServiceTest extends TestCase
      * @param string $serviceType
      * @param string $serviceTypeOther
      */
+    #[DataProvider('serviceTypeProvider')]
     public function testIncorrectCert(string $serviceType, string $serviceTypeOther): void
     {
         $service = $this->getService($serviceType, null, null);
